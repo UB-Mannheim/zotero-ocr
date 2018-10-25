@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE prefwindow SYSTEM "chrome://zoteroocr/locale/zoteroocr.dtd">
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<prefwindow 
+    id="zoteroocr-preferences"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+    <script src="chrome://zotero/content/include.js"/>
+    <script src="chrome://zoteroocr/content/zoteroocr.js"/>
+
+    <stringbundleset id="stringbundleset">
+        <stringbundle
+            id="zoteroocr-bundle"
+            src="chrome://zoteroocr/locale/zoteroocr.properties"/>
+    </stringbundleset>
+
+    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1" position="1">
+        <preferences>
+            <preference id="pref-zoteroocr-ocrPath" name="extensions.zotero.zoteroocr.ocrPath" type="string"/>
+        </preferences>
+        <groupbox>
+            <caption label="OCR path"/>
+            <label value="You can indicate here the path to your OCR engine:"/>
+            <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+        </groupbox>
+    </prefpane>
+
+</prefwindow>

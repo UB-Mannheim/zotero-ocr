@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://zoteroocr/locale/zoteroocr.dtd">
+
+<overlay
+    id="zoteroocr"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+    <script src="chrome://zotero/content/include.js"/>
+    <script src="chrome://zoteroocr/content/zoteroocr.js"/>
+
+    <stringbundleset id="stringbundleset">
+        <stringbundle
+            id="zoteroocr-bundle"
+            src="chrome://zoteroocr/locale/zoteroocr.properties"/>
+    </stringbundleset>
+
+    <popup id="zotero-itemmenu">
+        <menuitem
+            class="menuitem-iconic"
+            image="chrome://zoteroocr/skin/ubmannheim32x32.png"
+            id="zotero-itemmenu-ocr-menu"
+            label="&ocr.menu.label;"
+            oncommand="Zotero.OCR.recognize()"
+          />
+    </popup>
+
+</overlay>

@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<RDF:RDF
+    xmlns:em="http://www.mozilla.org/2004/em-rdf#"
+    xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <RDF:Description
+        RDF:about="urn:mozilla:install-manifest"
+        em:id="zotero-ocr@bib.uni-mannheim.de"
+        em:name="Zotero OCR"
+        em:version="0.0.1"
+        em:type="2"
+        em:iconURL="chrome://zoteroocr/skin/ubmannheim.png"
+        em:icon64URL="chrome://zoteroocr/skin/ubmannheim64x64.png"
+        em:creator="Philipp Zumstein"
+        em:description="Zotero Plugin for OCR"
+        em:homepageURL="https://github.org/UB-Mannheim/zotero-ocr"
+        em:updateURL="https://raw.githubusercontent.com/UB-Mannheim/zotero-ocr/master/update.rdf">
+        <em:optionsURL>chrome://zoteroocr/content/preferences.xul</em:optionsURL>
+        <em:type>2</em:type>
+        <em:targetApplication>
+            <Description>
+                <em:id>zotero@chnm.gmu.edu</em:id>
+                <em:minVersion>5.0</em:minVersion>
+                <em:maxVersion>5.*</em:maxVersion>
+            </Description>
+        </em:targetApplication>
+        <em:targetApplication>
+          <Description>
+            <em:id>juris-m@juris-m.github.io</em:id>
+            <em:minVersion>5.0</em:minVersion>
+            <em:maxVersion>5.*</em:maxVersion>
+          </Description>
+        </em:targetApplication>
+    </RDF:Description>
+</RDF:RDF>

@@ -1,6 +1,13 @@
 # Zotero OCR
 
-This Zotero plugin adds the functionality to perform an OCR for selected PDFs in Zotero.
+This Zotero plugin adds the functionality to perform an OCR for selected PDFs in Zotero. Currently tailored for the use with Tesseract OCR.
+
+## Prerequisites
+
+- Tesseract OCR is installed
+	- for Windows see https://github.com/UB-Mannheim/tesseract/wiki
+	- for Linux, Mac see https://github.com/tesseract-ocr/tesseract/wiki
+- `pdftoppm` from poppler library is downloaded and copied to the other scripts in the Zotero directory
 
 
 ## Installation
@@ -9,6 +16,7 @@ To install the extension:
 
 * Download the XPI file of the [latest release](https://github.com/UB-Mannheim/zotero-ocr/releases).
 * In Zotero, go to Tools → Add-ons and drag the .xpi onto the Add-ons window.
+* Possibly, adjust the path to Tesseract in the add-on options.
 
 
 ## Build and release

@@ -9,7 +9,7 @@ Zotero.OCR = new function() {
 		alert(ocrEngine);
 		// TODO analyze the installed languages and scripts
 		var items = Zotero.getActiveZoteroPane().getSelectedItems();
-		let dir = FileUtils.getDir('AChrom', []).parent;
+		let dir = FileUtils.getDir('CurProcD', []);
 		let pdfinfo = dir.clone();
 		pdfinfo.append("pdfinfo.exe");
 		let pdftoppm = dir.clone();

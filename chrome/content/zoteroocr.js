@@ -4,7 +4,7 @@ Zotero.OCR = new function() {
 		var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || "C:\\Program Files\\Tesseract-OCR\\tesseract.exe";
 		alert(ocrEngine);
 		// TODO analyze the installed languages and scripts
-		var items = ZoteroPane.getSelectedItems();
+		var items = Zotero.getActiveZoteroPane().getSelectedItems();
 		let dir = FileUtils.getDir('AChrom', []).parent;
 		let pdfinfo = dir.clone();
 		pdfinfo.append("pdfinfo.exe");

@@ -1,3 +1,7 @@
+// zoteroocr.js
+
+Components.utils.import("resource://gre/modules/FileUtils.jsm");
+
 Zotero.OCR = new function() {
 
 	this.recognize = Zotero.Promise.coroutine(function* () {

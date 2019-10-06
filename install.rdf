@@ -12,7 +12,7 @@
         em:icon64URL="chrome://zoteroocr/skin/ubmannheim64x64.png"
         em:creator="Philipp Zumstein"
         em:description="Zotero Plugin for OCR"
-        em:homepageURL="https://github.org/UB-Mannheim/zotero-ocr"
+        em:homepageURL="https://github.com/UB-Mannheim/zotero-ocr"
         em:updateURL="https://raw.githubusercontent.com/UB-Mannheim/zotero-ocr/master/update.rdf">
         <em:optionsURL>chrome://zoteroocr/content/preferences.xul</em:optionsURL>
         <em:type>2</em:type>

@@ -31,7 +31,7 @@ Zotero.OCR = new function() {
 					continue;
 				}
 				if (pdfAttachments.length > 1) {
-					alert("There are several PDFs attached to this item. Only the first one will be processed.")
+					alert("There are several PDFs attached to this item. Only the first one will be processed.");
 				}
 				pdfItem = pdfAttachments[0];
 			}

@@ -5,13 +5,21 @@ Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Zotero.OCR = new function() {
 
 	this.recognize = Zotero.Promise.coroutine(function* () {
+		let dir = FileUtils.getDir('CurProcD', []);
+		let pdfinfo = dir.clone();
+		let pdftoppm = dir.clone();
+		
 		if (Zotero.isWin) {
+			pdfinfo.append("pdfinfo.exe");
+			pdftoppm.append("pdftoppm.exe");
 			var ocrEngine_default = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe";
 			var png_prefix = "\\page";
 			var imageListString_prefix = "\\page-";
 			var imageList_file = "\\image-list.txt";
 		} else {
-			var ocrEngine_default = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe";
+			pdfinfo.append("pdfinfo");
+			pdftoppm.append("pdftoppm");
+			var ocrEngine_default = "tesseract";
 			var png_prefix = "/page";
 			var imageListString_prefix = '/page-';
 			var imageList_file = "/image-list.txt";
@@ -19,12 +27,7 @@ Zotero.OCR = new function() {
 		var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || ocrEngine_default;
 		// TODO analyze the installed languages and scripts
 		var items = Zotero.getActiveZoteroPane().getSelectedItems();
-		let dir = FileUtils.getDir('CurProcD', []);
-		let pdfinfo = dir.clone();
-		pdfinfo.append("pdfinfo");
-		let pdftoppm = dir.clone();
-		pdftoppm.append("pdftoppm");
-		
+
 		for (let item of items) {
 			// find the PDF
 			let pdfItem;

@@ -16,7 +16,6 @@ Zotero.OCR = new function() {
 			var imageListString_prefix = '/page-';
 			var imageList_file = "/image-list.txt";
 		}
-		alert(png_prefix);
 		var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || ocrEngine_default;
 		// TODO analyze the installed languages and scripts
 		var items = Zotero.getActiveZoteroPane().getSelectedItems();

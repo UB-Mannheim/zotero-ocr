@@ -5,15 +5,14 @@ Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Zotero.OCR = new function() {
 
 	this.recognize = Zotero.Promise.coroutine(function* () {
-		var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || "C:\\Program Files\\Tesseract-OCR\\tesseract.exe";
-		alert(ocrEngine);
+		var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || "tesseract";
 		// TODO analyze the installed languages and scripts
 		var items = Zotero.getActiveZoteroPane().getSelectedItems();
 		let dir = FileUtils.getDir('CurProcD', []);
 		let pdfinfo = dir.clone();
-		pdfinfo.append("pdfinfo.exe");
+		pdfinfo.append("pdfinfo");
 		let pdftoppm = dir.clone();
-		pdftoppm.append("pdftoppm.exe");
+		pdftoppm.append("pdftoppm");
 		
 		for (let item of items) {
 			// find the PDF
@@ -49,7 +48,7 @@ Zotero.OCR = new function() {
 			if (!(yield OS.File.exists(imageList))) {
 				try {
 					yield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, base + '.info.txt']);
-					yield Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '\\page' ]);
+					yield Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
 				}
 				catch (e) {
 					Zotero.logError(e);
@@ -60,14 +59,14 @@ Zotero.OCR = new function() {
 				let imageListString = '';
 				for (let i=1; i<=parseInt(numPages, 10); i++) {
 					let paddedIndex = "0".repeat(numPages.length) + i;
-					imageListString += dir + '\\page-' + paddedIndex.substr(-numPages.length) + '.png\n';
+					imageListString += dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png\n';
 				}
 				Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListString);
 			}
 			
 			try {
 				// TODO Is the differentiation for the output files with the additional '.ocr' useful in the end? Or should we overwrite the PDF and simplify the name of the hocr file?
-				yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '\\image-list.txt', base + '.ocr', '-l', 'deu', 'hocr', 'txt', 'pdf']);
+				yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', base + '.ocr', '-l', 'eng', 'hocr', 'txt', 'pdf']);
 			}
 			catch (e) {
 				Zotero.logError(e);

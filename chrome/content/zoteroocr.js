@@ -7,7 +7,35 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 Zotero.OCR = new function() {
 
   this.recognize = Zotero.Promise.coroutine(function* () {
-    var ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath") || "tesseract";
+
+    // Look for the tesseract executable in the settings and at commonly used locations.
+    // If it is found, the settings are updated.
+    // Otherwise abort with an alert.
+    let ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath");
+    let found = false;
+    if (ocrEngine) {
+      found = yield OS.File.exists(ocrEngine);
+    } else {
+      let path = ["/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", ""];
+      for (ocrEngine of path) {
+        ocrEngine += "tesseract"
+        if (Zotero.isWin) {
+          ocrEngine += ".exe"
+        }
+        if (yield OS.File.exists(ocrEngine)) {
+          found = true;
+          Zotero.debug("Found " + ocrEngine);
+          Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
+          break;
+        }
+        Zotero.debug("No " + ocrEngine);
+      }
+    }
+    if (!found) {
+      alert("No " + ocrEngine + " executable found.");
+      return;
+    }
+
     // TODO analyze the installed languages and scripts
     var items = Zotero.getActiveZoteroPane().getSelectedItems();
     let dir = FileUtils.getDir('CurProcD', []);

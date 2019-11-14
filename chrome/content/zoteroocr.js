@@ -38,11 +38,30 @@ Zotero.OCR = new function() {
 
     // TODO analyze the installed languages and scripts
     var items = Zotero.getActiveZoteroPane().getSelectedItems();
-    let dir = FileUtils.getDir('CurProcD', []);
+
+    // Look for pdfinfo and pdftoppm in the same directory as the zotero executable.
+    // Abort with an alert if they are not found.
+    // See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
+    // and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
+    let dir = FileUtils.getDir('GreBinD', []);
     let pdfinfo = dir.clone();
     pdfinfo.append("pdfinfo");
+    pdfinfo = pdfinfo.path;
     let pdftoppm = dir.clone();
     pdftoppm.append("pdftoppm");
+    pdftoppm = pdftoppm.path;
+    if (Zotero.isWin) {
+      pdfinfo = pdfinfo + ".exe";
+      pdftoppm = pdftoppm + ".exe";
+    }
+    if (!(yield OS.File.exists(pdfinfo))) {
+      alert("No " + pdfinfo + " executable found.");
+      return;
+    }
+    if (!(yield OS.File.exists(pdftoppm))) {
+      alert("No " + pdftoppm + " executable found.");
+      return;
+    }
 
     for (let item of items) {
       // find the PDF

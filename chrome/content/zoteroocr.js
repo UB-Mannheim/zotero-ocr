@@ -1,6 +1,8 @@
 // zoteroocr.js
 
+// See https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules.
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
+Components.utils.import("resource://gre/modules/osfile.jsm");
 
 Zotero.OCR = new function() {
 

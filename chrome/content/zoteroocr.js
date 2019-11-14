@@ -36,7 +36,6 @@ Zotero.OCR = new function() {
       return;
     }
 
-    // TODO analyze the installed languages and scripts
     var items = Zotero.getActiveZoteroPane().getSelectedItems();
 
     // Look for pdfinfo and pdftoppm in the same directory as the zotero executable.
@@ -114,8 +113,9 @@ Zotero.OCR = new function() {
       }
 
       try {
-        // TODO Is the differentiation for the output files with the additional '.ocr' useful in the end? Or should we overwrite the PDF and simplify the name of the hocr file?
-        yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', base + '.ocr', '-l', 'eng', 'hocr', 'txt', 'pdf']);
+        // TODO Is the differentiation for the output files with the additional '.ocr' useful in the end?
+        // Or should we overwrite the PDF and simplify the name of the hocr file?
+        yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', base + '.ocr', 'hocr', 'txt', 'pdf']);
       }
       catch (e) {
         Zotero.logError(e);

@@ -96,7 +96,9 @@ Zotero.OCR = new function() {
       let imageList = OS.Path.join(dir, 'image-list.txt');
       if (!(yield OS.File.exists(imageList))) {
         try {
+          Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
           yield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]);
+          Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
           yield Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
         }
         catch (e) {
@@ -116,6 +118,7 @@ Zotero.OCR = new function() {
       try {
         // TODO Is the differentiation for the output files with the additional '.ocr' useful in the end?
         // Or should we overwrite the PDF and simplify the name of the hocr file?
+        Zotero.debug("Running " + ocrEngine + ' ' + dir + '/image-list.txt ' + ocrbase + ' hocr txt pdf');
         yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', ocrbase, 'hocr', 'txt', 'pdf']);
       }
       catch (e) {

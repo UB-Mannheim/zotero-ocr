@@ -88,20 +88,22 @@ Zotero.OCR = new function() {
       let pdf = pdfItem.getFilePath();
       let base = pdf.replace(/\.pdf$/, '');
       let dir = OS.Path.dirname(pdf);
+      let infofile = base + '.info.txt';
+      let ocrbase = base + '.ocr';
       // TODO filter out PDFs which have already a text layer
 
       // extract images from PDF
       let imageList = OS.Path.join(dir, 'image-list.txt');
       if (!(yield OS.File.exists(imageList))) {
         try {
-          yield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, base + '.info.txt']);
+          yield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]);
           yield Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
         }
         catch (e) {
           Zotero.logError(e);
         }
         // save the list of images in a separate file
-        let info = yield Zotero.File.getContentsAsync(base + '.info.txt');
+        let info = yield Zotero.File.getContentsAsync(infofile);
         let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
         let imageListString = '';
         for (let i=1; i<=parseInt(numPages, 10); i++) {
@@ -114,7 +116,7 @@ Zotero.OCR = new function() {
       try {
         // TODO Is the differentiation for the output files with the additional '.ocr' useful in the end?
         // Or should we overwrite the PDF and simplify the name of the hocr file?
-        yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', base + '.ocr', 'hocr', 'txt', 'pdf']);
+        yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', ocrbase, 'hocr', 'txt', 'pdf']);
       }
       catch (e) {
         Zotero.logError(e);
@@ -122,7 +124,7 @@ Zotero.OCR = new function() {
 
       // add note with full text
       // TODO is this useful at all?
-      let contents = yield Zotero.File.getContentsAsync(base + '.ocr.txt');
+      let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
       let newNote = new Zotero.Item('note');
       newNote.setNote(contents);
       newNote.parentID = item.id;
@@ -131,7 +133,7 @@ Zotero.OCR = new function() {
       // create attachments with link to output formats
       for (let format of ['pdf', 'hocr']) {
         yield Zotero.Attachments.linkFromFile({
-          file: base + '.ocr.' + format,
+          file: ocrbase + '.' + format,
           parentItemID: item.id
         });
       }

@@ -36,8 +36,6 @@ Zotero.OCR = new function() {
       return;
     }
 
-    var items = Zotero.getActiveZoteroPane().getSelectedItems();
-
     // Look for pdfinfo and pdftoppm in the same directory as the zotero executable.
     // Abort with an alert if they are not found.
     // See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
@@ -62,6 +60,7 @@ Zotero.OCR = new function() {
       return;
     }
 
+    let items = Zotero.getActiveZoteroPane().getSelectedItems();
     for (let item of items) {
       // find the PDF
       let pdfItem;

@@ -8,7 +8,9 @@ Zotero.OCR = new function() {
 
 	this.openPreferenceWindow = function(paneID, action) {
 		var io = {pane: paneID, action: action};
-		window.openDialog('chrome://zoteroocr/content/preferences.xul',
+		
+		window.openDialog(
+				'chrome://zoteroocr/content/preferences.xul',
 				'Zotero OCR Preferences',
 				'chrome,titlebar,toolbar,centerscreen' + Zotero.Prefs.get('browser.preferences.instantApply', true) ? 'dialog=no' : 'modal', io
 		);

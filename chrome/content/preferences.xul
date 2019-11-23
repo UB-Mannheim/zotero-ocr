@@ -3,9 +3,11 @@
 <!DOCTYPE prefwindow SYSTEM "chrome://zoteroocr/locale/zoteroocr.dtd">
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero-platform/content/preferences.css"?>
 
 <prefwindow 
     id="zoteroocr-preferences"
+    title="Zotero OCR Preferences"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
     <script src="chrome://zotero/content/include.js"/>
@@ -17,7 +19,7 @@
             src="chrome://zoteroocr/locale/zoteroocr.properties"/>
     </stringbundleset>
 
-    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1" position="1">
+    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1">
         <preferences>
             <preference id="pref-zoteroocr-ocrPath" name="extensions.zotero.zoteroocr.ocrPath" type="string"/>
         </preferences>

@@ -6,6 +6,14 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 
 Zotero.OCR = new function() {
 
+	this.openPreferenceWindow = function(paneID, action) {
+		var io = {pane: paneID, action: action};
+		window.openDialog('chrome://zoteroocr/content/preferences.xul',
+				'Zotero OCR Preferences',
+				'chrome,titlebar,toolbar,centerscreen' + Zotero.Prefs.get('browser.preferences.instantApply', true) ? 'dialog=no' : 'modal', io
+		);
+	};
+
 	this.recognize = Zotero.Promise.coroutine(function* () {
 
 		// Look for the tesseract executable in the settings and at commonly used locations.

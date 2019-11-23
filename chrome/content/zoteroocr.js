@@ -8,12 +8,18 @@ Zotero.OCR = new function() {
 
 	this.openPreferenceWindow = function(paneID, action) {
 		var io = {pane: paneID, action: action};
-		
 		window.openDialog(
 				'chrome://zoteroocr/content/preferences.xul',
-				'Zotero OCR Preferences',
+				'zoteroocr-preferences-windowname',
 				'chrome,titlebar,toolbar,centerscreen' + Zotero.Prefs.get('browser.preferences.instantApply', true) ? 'dialog=no' : 'modal', io
 		);
+	};
+	
+	// disable or enable the nested option to overwrite PDF
+	this.updatePDFOverwritePref = function () {
+		setTimeout(() => {
+			document.getElementById('checkbox-zoteroocr-overwrite-pdf').disabled = !document.getElementById('checkbox-zoteroocr-output-pdf').checked;
+		});
 	};
 
 	this.recognize = Zotero.Promise.coroutine(function* () {
@@ -117,39 +123,66 @@ Zotero.OCR = new function() {
 				// save the list of images in a separate file
 				let info = yield Zotero.File.getContentsAsync(infofile);
 				let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
-				let imageListString = '';
+				var imageListArray = [];
 				for (let i=1; i<=parseInt(numPages, 10); i++) {
 					let paddedIndex = "0".repeat(numPages.length) + i;
-					imageListString += dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png\n';
+					imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
 				}
-				Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListString);
+				Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
 			}
 
+			let parameters = [dir + '/image-list.txt'];
+			let requestedFormats = [];
+			if (Zotero.Prefs.get("zoteroocr.overwritePDF")) {
+				parameters.push(base);
+			}
+			else {
+				parameters.push(ocrbase);
+			}
+			if (Zotero.Prefs.get("zoteroocr.language")) {
+				parameters.push('-l');
+				parameters.push(Zotero.Prefs.get("zoteroocr.language"));
+			}
+			parameters.push('txt');
+			if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
+				parameters.push('pdf');
+				requestedFormats.push('pdf');
+			}
+			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
+				parameters.push('hocr');
+				requestedFormats.push('hocr');
+			}
 			try {
-				// TODO Is the differentiation for the output files with the additional '.ocr' useful in the end?
-				// Or should we overwrite the PDF and simplify the name of the hocr file?
-				Zotero.debug("Running " + ocrEngine + ' ' + dir + '/image-list.txt ' + ocrbase + ' hocr txt pdf');
-				yield Zotero.Utilities.Internal.exec(ocrEngine, [dir + '/image-list.txt', ocrbase, 'hocr', 'txt', 'pdf']);
+				Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
+				yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
 			}
 			catch (e) {
 				Zotero.logError(e);
 			}
 
-			// add note with full text
-			// TODO is this useful at all?
-			let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
-			let newNote = new Zotero.Item('note');
-			newNote.setNote(contents);
-			newNote.parentID = item.id;
-			yield newNote.saveTx();
+			if (Zotero.Prefs.get("zoteroocr.outputNote")) {
+				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
+				let newNote = new Zotero.Item('note');
+				newNote.setNote(contents);
+				newNote.parentID = item.id;
+				yield newNote.saveTx();
+			}
 
 			// create attachments with link to output formats
-			for (let format of ['pdf', 'hocr']) {
+			for (let format of requestedFormats) {
 				yield Zotero.Attachments.linkFromFile({
 					file: ocrbase + '.' + format,
 					parentItemID: item.id
 				});
 			}
+			
+			if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
+				// delete PNGs
+				for (let imageName of imageListArray) {
+					yield Zotero.File.removeIfExists(imageName);
+				}
+			}
 		}
 	});
+
 };

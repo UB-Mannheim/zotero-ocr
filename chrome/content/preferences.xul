@@ -13,7 +13,6 @@
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
     <script src="chrome://zotero/content/include.js"/>
-    <script src="chrome://zoteroocr/content/zoteroocr.js"/>
 
     <stringbundleset id="stringbundleset">
         <stringbundle

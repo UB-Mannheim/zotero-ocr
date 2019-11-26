@@ -105,7 +105,7 @@ Zotero.OCR = new function() {
 			let base = pdf.replace(/\.pdf$/, '');
 			let dir = OS.Path.dirname(pdf);
 			let infofile = base + '.info.txt';
-			let ocrbase = base + '.ocr';
+			let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
 			// TODO filter out PDFs which have already a text layer
 
 			// extract images from PDF
@@ -133,12 +133,7 @@ Zotero.OCR = new function() {
 
 			let parameters = [dir + '/image-list.txt'];
 			let requestedFormats = [];
-			if (Zotero.Prefs.get("zoteroocr.overwritePDF")) {
-				parameters.push(base);
-			}
-			else {
-				parameters.push(ocrbase);
-			}
+			parameters.push(ocrbase);
 			if (Zotero.Prefs.get("zoteroocr.language")) {
 				parameters.push('-l');
 				parameters.push(Zotero.Prefs.get("zoteroocr.language"));
@@ -177,6 +172,8 @@ Zotero.OCR = new function() {
 			}
 			
 			if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
+				// delete image list
+				yield Zotero.File.removeIfExists(imageList);
 				// delete PNGs
 				for (let imageName of imageListArray) {
 					yield Zotero.File.removeIfExists(imageName);

@@ -3,13 +3,16 @@
 <!DOCTYPE prefwindow SYSTEM "chrome://zoteroocr/locale/zoteroocr.dtd">
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero-platform/content/preferences.css"?>
+<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
+<?xml-stylesheet href="chrome://zotero/skin/preferences.css"?>
 
 <prefwindow 
     id="zoteroocr-preferences"
+    title="Zotero OCR Preferences"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
     <script src="chrome://zotero/content/include.js"/>
-    <script src="chrome://zoteroocr/content/zoteroocr.js"/>
 
     <stringbundleset id="stringbundleset">
         <stringbundle
@@ -17,14 +20,32 @@
             src="chrome://zoteroocr/locale/zoteroocr.properties"/>
     </stringbundleset>
 
-    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1" position="1">
+    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1">
         <preferences>
             <preference id="pref-zoteroocr-ocrPath" name="extensions.zotero.zoteroocr.ocrPath" type="string"/>
+            <preference id="pref-zoteroocr-language" name="extensions.zotero.zoteroocr.language" type="string"/>
+            <preference id="pref-zoteroocr-output-note" name="extensions.zotero.zoteroocr.outputNote" type="bool"/>
+            <preference id="pref-zoteroocr-output-pdf" name="extensions.zotero.zoteroocr.outputPDF" type="bool"/>
+            <preference id="pref-zoteroocr-overwrite-pdf" name="extensions.zotero.zoteroocr.overwritePDF" type="bool"/>
+            <preference id="pref-zoteroocr-output-hocr" name="extensions.zotero.zoteroocr.outputHocr" type="bool"/>
+            <preference id="pref-zoteroocr-output-png" name="extensions.zotero.zoteroocr.outputPNG" type="bool"/>
         </preferences>
         <groupbox>
-            <caption label="OCR path"/>
+            <caption label="OCR parameters"/>
             <label value="You can indicate here the path to your OCR engine:"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+            <hbox>
+                <label value="Choose a language/script you want to use for recognition (default is eng):"/>
+                <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>
+            </hbox>
+        </groupbox>
+        <groupbox>
+            <caption label="Output options"/>
+            <checkbox preference="pref-zoteroocr-output-note" label="Save output as a note"/>
+            <checkbox id="checkbox-zoteroocr-output-pdf" preference="pref-zoteroocr-output-pdf" label="Save output as a PDF with text layer" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
+            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="pref-zoteroocr-overwrite-pdf" label="Overwrite the initial PDF with the output" class="indented-pref"/>
+            <checkbox preference="pref-zoteroocr-output-hocr" label="Save output as a HTML/hocr file"/>
+            <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate PNGs as well in the folder"/>
         </groupbox>
     </prefpane>
 

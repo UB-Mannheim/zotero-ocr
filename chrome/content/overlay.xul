@@ -25,4 +25,8 @@
           />
     </popup>
 
+    <menupopup id="menu_ToolsPopup">
+      <menuitem id="zoteroocr-options" insertafter="menu_preferences" label="&ocr.preferences.label;" oncommand="Zotero.OCR.openPreferenceWindow();"/>
+    </menupopup>
+
 </overlay>

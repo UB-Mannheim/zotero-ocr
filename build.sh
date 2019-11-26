@@ -7,4 +7,4 @@ fi
 
 
 rm -f zotero-ocr-${version}.xpi
-zip -r zotero-ocr-${version}.xpi chrome/* chrome.manifest install.rdf
+zip -r zotero-ocr-${version}.xpi chrome/* defaults/* chrome.manifest install.rdf

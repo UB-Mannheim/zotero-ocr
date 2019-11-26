@@ -31,12 +31,13 @@ Zotero.OCR = new function() {
 		let found = false;
 		if (ocrEngine) {
 			found = yield OS.File.exists(ocrEngine);
-		} else {
+		}
+		else {
 			let path = ["/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", ""];
 			for (ocrEngine of path) {
-				ocrEngine += "tesseract"
+				ocrEngine += "tesseract";
 				if (Zotero.isWin) {
-					ocrEngine += ".exe"
+					ocrEngine += ".exe";
 				}
 				if (yield OS.File.exists(ocrEngine)) {
 					found = true;
@@ -84,11 +85,13 @@ Zotero.OCR = new function() {
 				if (item.isFileAttachment() && item.attachmentContentType == 'application/pdf') {
 					pdfItem = item;
 					item = Zotero.Items.get(item.parentItemID);
-				} else {
+				}
+				else {
 					alert("Item is attachment but not PDF and will be ignored.");
 					continue;
 				}
-			} else {
+			}
+			else {
 				let pdfAttachments = item.getAttachments(false)
 					.map(itemID => Zotero.Items.get(itemID))
 					.filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
@@ -124,7 +127,7 @@ Zotero.OCR = new function() {
 				let info = yield Zotero.File.getContentsAsync(infofile);
 				let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
 				var imageListArray = [];
-				for (let i=1; i<=parseInt(numPages, 10); i++) {
+				for (let i = 1; i <= parseInt(numPages, 10); i++) {
 					let paddedIndex = "0".repeat(numPages.length) + i;
 					imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
 				}

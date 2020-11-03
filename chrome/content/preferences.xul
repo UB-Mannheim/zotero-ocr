@@ -23,6 +23,7 @@
     <prefpane label="General" id="zoteroocr-prefpane-general" flex="1">
         <preferences>
             <preference id="pref-zoteroocr-ocrPath" name="extensions.zotero.zoteroocr.ocrPath" type="string"/>
+            <preference id="pref-zoteroocr-pdftoppmPath" name="extensions.zotero.zoteroocr.pdftoppmPath" type="string"/>
             <preference id="pref-zoteroocr-language" name="extensions.zotero.zoteroocr.language" type="string"/>
             <preference id="pref-zoteroocr-output-note" name="extensions.zotero.zoteroocr.outputNote" type="bool"/>
             <preference id="pref-zoteroocr-output-pdf" name="extensions.zotero.zoteroocr.outputPDF" type="bool"/>
@@ -34,6 +35,8 @@
             <caption label="OCR parameters"/>
             <label value="You can indicate here the path to your OCR engine:"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+            <label value="You can indicate here the path to pdftoppm:"/>
+            <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>

@@ -73,8 +73,11 @@ Zotero.OCR = new function() {
 			return;
 		}
 		if (!(yield OS.File.exists(pdftoppm))) {
-			alert("No " + pdftoppm + " executable found.");
-			return;
+                        pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
+                        if (!(yield OS.File.exists(pdftoppm))) {
+				alert("No " + pdftoppm + " executable found.");
+				return;
+			}
 		}
 
 		let items = Zotero.getActiveZoteroPane().getSelectedItems();

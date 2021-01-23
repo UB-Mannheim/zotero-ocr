@@ -1,13 +1,17 @@
 # Zotero OCR
 
-This Zotero plugin adds the functionality to perform an OCR for selected PDFs in Zotero. Currently tailored for the use with Tesseract OCR.
+This Zotero plugin adds the functionality to perform an OCR for the PDFs
+selected in Zotero. It can add a new PDF including the recognized text,
+a text itself in a note, and an HOCR file.
+Tesseract OCR is used for the text recognition itself.
+
 
 ## Prerequisites
 
 - Tesseract OCR is installed
   - for Windows see https://github.com/UB-Mannheim/tesseract/wiki
   - for Linux, Mac see https://github.com/tesseract-ocr/tesseract/wiki
-- `pdftoppm` from poppler library is downloaded and copied to the other scripts in the Zotero directory
+- `pdftoppm` from poppler library is downloaded and installed
 
 
 ## Installation
@@ -19,6 +23,17 @@ To install the extension:
 * Possibly, adjust the path to Tesseract in the add-on options.
 
 
+## Configuration
+
+The configuration is in the `Tools` under `Zotero OCR Preferences`:
+
+![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)
+
+Moreover, these options are saved as Zotero preferences variables, which
+are also available through the
+[Config Editor](https://www.zotero.org/support/preferences/advanced).
+
+
 ## Build and release
 
 Run `build.sh` script, which creates a new `.xpi` file.
@@ -28,10 +43,14 @@ For a new release, run the script `release.sh`, push the code changes, publish a
 
 ## Development
 
-Create a text file containing the full path to this directory,
-name the file `zotero-ocr@bib.uni-mannheim.de`, and place it in the `extensions`
-subdirectory of your [Zotero profile directory](https://www.zotero.org/support/kb/profile_directory).
-Restart Zotero to try the latest code changes.
+After any code changes one can build a new extension file by `./build.sh <version>`.
+Then in Zotero go to `Tools`, `Add-ons`, `Install Add-on From File...`
+and choose there the newly created `.xpi`-file. Zotero will restart with the
+newly built add-on version.
+
+If any error occurs then you will see more details in the `Help`, `Report Error...`
+dialog. For some debugging messages you can activate in Zotero the debugging
+in the `Help`, `Debug Output Logging`.
 
 
 ## License

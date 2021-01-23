@@ -56,8 +56,8 @@ Zotero.OCR = new function() {
 		// Use the special pdfinfo variant in the zotero directory (which comes along Zotero)
 		// See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
 		// and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
-		let dir = FileUtils.getDir('GreBinD', []);
-		let pdfinfo = dir.clone();
+		let zdir = FileUtils.getDir('GreBinD', []);
+		let pdfinfo = zdir.clone();
 		pdfinfo.append("pdfinfo");
 		pdfinfo = pdfinfo.path;
 		if (Zotero.isWin) {
@@ -72,7 +72,7 @@ Zotero.OCR = new function() {
 		let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
 		if (!pdftoppm) {
 			// alternatively use the also the Zotero directory to look for pdftoppm
-			pdftoppm = dir.clone();
+			pdftoppm = zdir.clone();
 			pdftoppm.append("pdftoppm");
 			pdftoppm = pdftoppm.path;
 		}
@@ -142,7 +142,6 @@ Zotero.OCR = new function() {
 			}
 
 			let parameters = [dir + '/image-list.txt'];
-			let requestedFormats = [];
 			parameters.push(ocrbase);
 			if (Zotero.Prefs.get("zoteroocr.language")) {
 				parameters.push('-l');
@@ -151,13 +150,9 @@ Zotero.OCR = new function() {
 			parameters.push('txt');
 			if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
 				parameters.push('pdf');
-				if (!(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-					requestedFormats.push('pdf');
-				}
 			}
 			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
 				parameters.push('hocr');
-				requestedFormats.push('hocr');
 			}
 			try {
 				Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
@@ -175,11 +170,42 @@ Zotero.OCR = new function() {
 				newNote.parentID = item.id;
 				yield newNote.saveTx();
 			}
+			
+			
+			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
+				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.hocr');
+				// replace the absolute paths of images with relative ones
+				escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+				let regexp = new RegExp(escapedDir + "/", 'g');
+				contents = contents.replace(regexp, '');
+				// split content into the preamble and pages
+				contents = contents.replace("</body>\n</html>", '');
+				parts = contents.split("<div class='ocr_page'");
+				preamble = parts[0];
+				// create new html attachments including hocrjs for individual pages
+				maximumPagesAsHtml = parseInt(Zotero.Prefs.get("zoteroocr.maximumPagesAsHtml"));
+				if (isNaN(maximumPagesAsHtml)) {
+					upperLimit = parts.length;
+				} else {
+					upperLimit = Math.min(parts.length, maximumPagesAsHtml + 1)
+				}
+				for (let i = 1; i < upperLimit; i++) {
+					let pagename = 'page-' + i + '.html';
+					let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
+					let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +	'<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
+					Zotero.File.putContents(htmlfile, pagecontent);
+					yield Zotero.Attachments.linkFromFile({
+						file: OS.Path.join(dir, pagename),
+						contentType: "text/html",
+						parentItemID: item.id
+					});
+				}
+			}
 
-			// create attachments with link to output formats
-			for (let format of requestedFormats) {
+			// attach PDF if it is a new one
+			if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
 				yield Zotero.Attachments.linkFromFile({
-					file: ocrbase + '.' + format,
+					file: ocrbase + '.pdf',
 					parentItemID: item.id
 				});
 			}

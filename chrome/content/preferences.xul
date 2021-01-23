@@ -29,6 +29,7 @@
             <preference id="pref-zoteroocr-output-pdf" name="extensions.zotero.zoteroocr.outputPDF" type="bool"/>
             <preference id="pref-zoteroocr-overwrite-pdf" name="extensions.zotero.zoteroocr.overwritePDF" type="bool"/>
             <preference id="pref-zoteroocr-output-hocr" name="extensions.zotero.zoteroocr.outputHocr" type="bool"/>
+            <preference id="pref-zoteroocr-max-html-pages" name="extensions.zotero.zoteroocr.maximumPagesAsHtml" type="string"/>
             <preference id="pref-zoteroocr-output-png" name="extensions.zotero.zoteroocr.outputPNG" type="bool"/>
         </preferences>
         <groupbox>
@@ -47,7 +48,12 @@
             <checkbox preference="pref-zoteroocr-output-note" label="Save output as a note"/>
             <checkbox id="checkbox-zoteroocr-output-pdf" preference="pref-zoteroocr-output-pdf" label="Save output as a PDF with text layer" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
             <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="pref-zoteroocr-overwrite-pdf" label="Overwrite the initial PDF with the output" class="indented-pref"/>
-            <checkbox preference="pref-zoteroocr-output-hocr" label="Save output as a HTML/hocr file"/>
+            <checkbox preference="pref-zoteroocr-output-hocr" label="Save output as a HTML/hocr file(s)"/>
+            <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
+            <hbox class="indented-pref">
+              <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
+              <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" width="20"/>
+            </hbox>
             <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate PNGs as well in the folder"/>
         </groupbox>
     </prefpane>

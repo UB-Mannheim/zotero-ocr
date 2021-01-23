@@ -169,6 +169,7 @@ Zotero.OCR = new function() {
 
 			if (Zotero.Prefs.get("zoteroocr.outputNote")) {
 				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
+				contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
 				let newNote = new Zotero.Item('note');
 				newNote.setNote(contents);
 				newNote.parentID = item.id;

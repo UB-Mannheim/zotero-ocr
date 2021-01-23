@@ -151,7 +151,9 @@ Zotero.OCR = new function() {
 			parameters.push('txt');
 			if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
 				parameters.push('pdf');
-				requestedFormats.push('pdf');
+				if (!(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
+					requestedFormats.push('pdf');
+				}
 			}
 			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
 				parameters.push('hocr');

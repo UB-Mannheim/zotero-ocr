@@ -53,24 +53,31 @@ Zotero.OCR = new function() {
 			return;
 		}
 
-		// Look for pdfinfo and pdftoppm in the same directory as the zotero executable.
-		// Abort with an alert if they are not found.
+		// Use the special pdfinfo variant in the zotero directory (which comes along Zotero)
 		// See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
 		// and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
 		let dir = FileUtils.getDir('GreBinD', []);
 		let pdfinfo = dir.clone();
 		pdfinfo.append("pdfinfo");
 		pdfinfo = pdfinfo.path;
-		let pdftoppm = dir.clone();
-		pdftoppm.append("pdftoppm");
-		pdftoppm = pdftoppm.path;
 		if (Zotero.isWin) {
 			pdfinfo = pdfinfo + ".exe";
-			pdftoppm = pdftoppm + ".exe";
 		}
 		if (!(yield OS.File.exists(pdfinfo))) {
 			alert("No " + pdfinfo + " executable found.");
 			return;
+		}
+
+		// Look for a specific path in the preferences for pdftoppm
+		let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
+		if (!pdftoppm) {
+			// alternatively use the also the Zotero directory to look for pdftoppm
+			pdftoppm = dir.clone();
+			pdftoppm.append("pdftoppm");
+			pdftoppm = pdftoppm.path;
+		}
+		if (Zotero.isWin && !(pdftoppm.endsWith(".exe"))) {
+			pdftoppm = pdftoppm + ".exe";
 		}
 		if (!(yield OS.File.exists(pdftoppm))) {
 			alert("No " + pdftoppm + " executable found.");

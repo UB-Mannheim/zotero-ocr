@@ -1,8 +1,14 @@
 # Zotero OCR
 
+[![LGTM Grade](https://img.shields.io/lgtm/grade/javascript/github/UB-Mannheim/zotero-ocr)](https://github.com/UB-Mannheim/zotero-ocr/blob/master/LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/UB-Mannheim/zotero-ocr)](https://github.com/UB-Mannheim/zotero-ocr/releases)
+![Release Date](https://img.shields.io/github/release-date/UB-Mannheim/zotero-ocr?color=9cf)
+[![License](https://img.shields.io/github/license/UB-Mannheim/zotero-ocr)](https://github.com/UB-Mannheim/zotero-ocr/blob/master/LICENSE)
+![Downloads latest release](https://img.shields.io/github/downloads/UB-Mannheim/zotero-ocr/latest/total?color=yellow)
+
 This Zotero plugin adds the functionality to perform an OCR for the PDFs
 selected in Zotero. It can add a new PDF including the recognized text,
-a text itself in a note, and an HOCR file.
+a note with the recognized text only, and HTML (HOCR) file(s).
 Tesseract OCR is used for the text recognition itself.
 
 
@@ -25,7 +31,7 @@ To install the extension:
 
 ## Configuration
 
-The configuration is in the `Tools` under `Zotero OCR Preferences`:
+The configuration can be accessed under Tools → Zotero OCR Preferences:
 
 ![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)
 
@@ -55,4 +61,5 @@ in the `Help`, `Debug Output Logging`.
 
 ## License
 
+Zotero OCR is free and Open Source software.
 The source code is released under [GNU Affero General Public License v3](LICENSE).

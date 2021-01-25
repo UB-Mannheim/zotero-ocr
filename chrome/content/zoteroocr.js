@@ -175,19 +175,18 @@ Zotero.OCR = new function() {
 			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
 				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.hocr');
 				// replace the absolute paths of images with relative ones
-				escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+				let escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				let regexp = new RegExp(escapedDir + "/", 'g');
 				contents = contents.replace(regexp, '');
 				// split content into the preamble and pages
 				contents = contents.replace("</body>\n</html>", '');
-				parts = contents.split("<div class='ocr_page'");
-				preamble = parts[0];
+				let parts = contents.split("<div class='ocr_page'");
+				let preamble = parts[0];
 				// create new html attachments including hocrjs for individual pages
-				maximumPagesAsHtml = parseInt(Zotero.Prefs.get("zoteroocr.maximumPagesAsHtml"));
-				if (isNaN(maximumPagesAsHtml)) {
-					upperLimit = parts.length;
-				} else {
-					upperLimit = Math.min(parts.length, maximumPagesAsHtml + 1)
+				let maximumPagesAsHtml = parseInt(Zotero.Prefs.get("zoteroocr.maximumPagesAsHtml"));
+				let upperLimit = parts.length;
+				if (!(isNaN(maximumPagesAsHtml)) && (maximumPagesAsHtml + 1 < upperLimit)) {
+					upperLimit = maximumPagesAsHtml + 1;
 				}
 				for (let i = 1; i < upperLimit; i++) {
 					let pagename = 'page-' + i + '.html';

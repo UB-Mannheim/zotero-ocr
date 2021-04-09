@@ -16,7 +16,7 @@ Tesseract OCR is used for the text recognition itself.
 
 - Tesseract OCR is installed
   - for Windows see https://github.com/UB-Mannheim/tesseract/wiki
-  - for Linux, Mac see https://github.com/tesseract-ocr/tesseract/wiki
+  - for Linux, Mac see https://github.com/tesseract-ocr/tessdoc/blob/master/Installation.md
 - `pdftoppm` from poppler library is downloaded and installed
 
 

@@ -18,6 +18,7 @@ Tesseract OCR is used for the text recognition itself.
   - for Windows see https://github.com/UB-Mannheim/tesseract/wiki
   - for Linux, Mac see https://tesseract-ocr.github.io/tessdoc/Installation.html
 - `pdftoppm` from poppler library is downloaded and installed
+  - some hints for the installation: https://github.com/UB-Mannheim/zotero-ocr/wiki/Install-pdftoppm
 
 
 ## Installation
@@ -31,7 +32,16 @@ To install the extension:
 
 ## Configuration
 
-The configuration can be accessed under Tools → Zotero OCR Preferences:
+The configuration can be accessed under Tools → Zotero OCR Preferences.
+
+By default the fields for the paths to the OCR engine and pdftoppm are empty,
+which means, that the usual locations are looked at. If that does not work,
+then you should locate the tools on your local mashine and enter the full
+paths including the name of the tools itself.
+
+The default language/script to use with Tesseract, can only be one of the installed
+models. If you leave that field empty, then the English model (eng) will be used, which is
+always installed with Tesseract.
 
 ![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)
 

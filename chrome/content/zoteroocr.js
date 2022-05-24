@@ -30,18 +30,14 @@ Zotero.OCR = new function() {
 		let ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath");
 		let found = false;
 		if (ocrEngine) {
-			if (!ocrEngine.endsWith("tesseract") && !ocrEngine.endsWith("tesseract.exe")) {
+			let pathOrFile = FileUtils.File(ocrEngine);
+			// If a directory is given, then try for the standard name of the tool.
+			if (pathOrFile.isDirectory()) {
 				if (Zotero.isWin) {
-					if (!ocrEngine.endsWith("\\")) {
-						ocrEngine += "\\";
-					}
-					ocrEngine += "tesseract.exe";
+					ocrEngine = OS.Path.join(ocrEngine, "tesseract.exe");
 				}
 				else {
-					if (!ocrEngine.endsWith("/")) {
-						ocrEngine += "/";
-					}
-					ocrEngine += "tesseract";
+					ocrEngine = OS.Path.join(ocrEngine, "tesseract");
 				}
 				Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
 			}

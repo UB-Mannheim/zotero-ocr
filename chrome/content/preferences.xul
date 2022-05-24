@@ -34,7 +34,7 @@
         </preferences>
         <groupbox>
             <caption label="OCR parameters"/>
-            <label value="Full location of the tesseract executable (when empty, the usual locations are search for it):"/>
+            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
             <label value="Full location of the pdftoppm executable:"/>
             <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>

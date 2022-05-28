@@ -30,10 +30,21 @@ Zotero.OCR = new function() {
 		let ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath");
 		let found = false;
 		if (ocrEngine) {
+			let pathOrFile = FileUtils.File(ocrEngine);
+			// If a directory is given, then try for the standard name of the tool.
+			if (pathOrFile.isDirectory()) {
+				if (Zotero.isWin) {
+					ocrEngine = OS.Path.join(ocrEngine, "tesseract.exe");
+				}
+				else {
+					ocrEngine = OS.Path.join(ocrEngine, "tesseract");
+				}
+				Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
+			}
 			found = yield OS.File.exists(ocrEngine);
 		}
 		else {
-			let path = ["/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", ""];
+			let path = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
 			for (ocrEngine of path) {
 				ocrEngine += "tesseract";
 				if (Zotero.isWin) {
@@ -49,7 +60,7 @@ Zotero.OCR = new function() {
 			}
 		}
 		if (!found) {
-			alert("No " + ocrEngine + " executable found.");
+			alert("Tesseract executable not found. Tried: " + ocrEngine);
 			return;
 		}
 

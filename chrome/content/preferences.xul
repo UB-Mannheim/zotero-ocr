@@ -34,9 +34,9 @@
         </preferences>
         <groupbox>
             <caption label="OCR parameters"/>
-            <label value="You can indicate here the path to your OCR engine:"/>
+            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
-            <label value="You can indicate here the path to pdftoppm:"/>
+            <label value="Full location of the pdftoppm executable:"/>
             <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>

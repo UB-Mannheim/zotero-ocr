@@ -133,10 +133,13 @@ Zotero.OCR = new function() {
 			let imageList = OS.Path.join(dir, 'image-list.txt');
 			if (!(yield OS.File.exists(imageList))) {
 				try {
-					Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
-					yield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]);
-					Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
-					yield Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
+					let pdfinfo_cmd_args = [pdf, infofile];
+					Zotero.debug("Running " + pdfinfo + ' ' + pdfinfo_cmd_args.join(' '));
+					yield Zotero.Utilities.Internal.exec(pdfinfo, pdfinfo_cmd_args);
+
+					let pdftoppm_cmd_args = ['-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+					Zotero.debug("Running " + pdftoppm + ' ' + pdftoppm_cmd_args.join(' '));
+					yield Zotero.Utilities.Internal.exec(pdftoppm, pdftoppm_cmd_args);
 				}
 				catch (e) {
 					Zotero.logError(e);
@@ -154,6 +157,8 @@ Zotero.OCR = new function() {
 
 			let parameters = [dir + '/image-list.txt'];
 			parameters.push(ocrbase);
+			parameters.push('--psm');
+			parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
 			if (Zotero.Prefs.get("zoteroocr.language")) {
 				parameters.push('-l');
 				parameters.push(Zotero.Prefs.get("zoteroocr.language"));
@@ -178,6 +183,7 @@ Zotero.OCR = new function() {
 				contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
 				let newNote = new Zotero.Item('note');
 				newNote.setNote(contents);
+				newNote.libraryID = item.libraryID;
 				newNote.parentID = item.id;
 				yield newNote.saveTx();
 			}
@@ -204,20 +210,37 @@ Zotero.OCR = new function() {
 					let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
 					let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +	'<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
 					Zotero.File.putContents(htmlfile, pagecontent);
-					yield Zotero.Attachments.linkFromFile({
-						file: OS.Path.join(dir, pagename),
-						contentType: "text/html",
-						parentItemID: item.id
-					});
+					if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+						yield Zotero.Attachments.importFromFile({
+							file: OS.Path.join(dir, pagename),
+							contentType: "text/html",
+							libraryID: item.libraryID,
+							parentItemID: item.id,
+						});
+					} else {
+						yield Zotero.Attachments.linkFromFile({
+							file: OS.Path.join(dir, pagename),
+							contentType: "text/html",
+							parentItemID: item.id
+						});
+					}
 				}
 			}
 
 			// attach PDF if it is a new one
 			if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-				yield Zotero.Attachments.linkFromFile({
-					file: ocrbase + '.pdf',
-					parentItemID: item.id
-				});
+				if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+					yield Zotero.Attachments.importFromFile({
+						file: ocrbase + '.pdf',
+						libraryID: item.libraryID,
+						parentItemID: item.id,
+					});
+				} else {
+					yield Zotero.Attachments.linkFromFile({
+						file: ocrbase + '.pdf',
+						parentItemID: item.id
+					});
+				}
 			}
 			
 			if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {

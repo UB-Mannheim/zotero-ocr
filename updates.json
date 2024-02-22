@@ -1,0 +1,17 @@
+{
+  "addons": {
+    "zotero-ocr@bib.uni-mannheim.de": {
+      "updates": [
+        {
+          "version": "0.7.0",
+          "update_link": "https://github.com/UB-Mannheim/zotero-ocr/releases/tag/0.7.0/zotero-ocr-0.7.0.xpi",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "6.999"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

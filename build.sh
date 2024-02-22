@@ -5,6 +5,11 @@ if [ -z "$version" ]; then
 	read -p "Enter new version number: " version
 fi
 
-
-rm -f zotero-ocr-${version}.xpi
-zip -r zotero-ocr-${version}.xpi chrome/* defaults/* chrome.manifest install.rdf
+if [ -d build ]; then
+	if [ -f build/*.xpi ]; then
+		rm -f  build/*.xpi
+	fi
+else
+	mkdir build
+fi
+cd src && zip -r ../build/zotero-ocr-${version}.xpi * -x "*.DS_Store" && cd ..

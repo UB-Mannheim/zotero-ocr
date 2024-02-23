@@ -137,6 +137,9 @@ ZoteroOCR = {
         // See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
         // and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
         let zdir = FileUtils.getDir('GreBinD', []);
+
+        // TODO is this still necessary in anyway?
+        /*
         let pdfinfo = zdir.clone();
         pdfinfo.append("pdfinfo");
         pdfinfo = pdfinfo.path;
@@ -147,6 +150,7 @@ ZoteroOCR = {
             window.alert("No " + pdfinfo + " executable found.");
             return;
         }
+        */
 
         // Look for a specific path in the preferences for pdftoppm
         let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
@@ -202,8 +206,9 @@ ZoteroOCR = {
             let imageList = OS.Path.join(dir, 'image-list.txt');
             if (!(await OS.File.exists(imageList))) {
                 try {
-                    Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
-                    await Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]);
+                    // TODO is this still useful in any way?
+                    /* Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
+                    await Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]); */
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
                     await Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
                 }

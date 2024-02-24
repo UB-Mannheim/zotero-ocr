@@ -133,24 +133,9 @@ ZoteroOCR = {
             return;
         }
 
-        // Use the special pdfinfo variant in the zotero directory (which comes along Zotero)
         // See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
         // and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
         let zdir = FileUtils.getDir('GreBinD', []);
-
-        // TODO is this still necessary in anyway?
-        /*
-        let pdfinfo = zdir.clone();
-        pdfinfo.append("pdfinfo");
-        pdfinfo = pdfinfo.path;
-        if (Zotero.isWin) {
-            pdfinfo = pdfinfo + ".exe";
-        }
-        if (! (await OS.File.exists(pdfinfo)) ) {
-            window.alert("No " + pdfinfo + " executable found.");
-            return;
-        }
-        */
 
         // Look for a specific path in the preferences for pdftoppm
         let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");

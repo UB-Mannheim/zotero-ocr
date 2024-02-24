@@ -210,20 +210,27 @@ ZoteroOCR = {
                     /* Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
                     await Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]); */
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
-                    await Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
+                    await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
                 }
                 catch (e) {
                     Zotero.logError(e);
                 }
-                // save the list of images in a separate file
-                let info = await Zotero.File.getContentsAsync(infofile);
-                let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
+
+                
+                var iterator = new OS.File.DirectoryIterator(dir);
                 var imageListArray = [];
-                for (let i = 1; i <= parseInt(numPages, 10); i++) {
-                    let paddedIndex = "0".repeat(numPages.length) + i;
-                    imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
-                }
+                await iterator.forEach(function onEntry(entry) {
+                    Zotero.debug(entry);
+                    if (entry.name.includes('.png')) {
+                        imageListArray.push(entry.path);
+                    }
+                });
+                Zotero.debug('Files are now:')
+                Zotero.debug(imageListArray);
+  
+                // save the list of images in a separate file
                 Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
+
             }
 
             let parameters = [dir + '/image-list.txt'];
@@ -255,7 +262,6 @@ ZoteroOCR = {
                 newNote.parentID = item.id;
                 await newNote.saveTx();
             }
-            
             
             if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
                 let contents = await Zotero.File.getContentsAsync(ocrbase + '.hocr');

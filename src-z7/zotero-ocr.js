@@ -204,9 +204,6 @@ ZoteroOCR = {
             let imageList = OS.Path.join(dir, 'image-list.txt');
             if (!(await OS.File.exists(imageList))) {
                 try {
-                    // TODO is this still useful in any way?
-                    /* Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
-                    await Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]); */
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
                     await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
                 }

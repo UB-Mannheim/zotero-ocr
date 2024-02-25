@@ -216,7 +216,7 @@ ZoteroOCR = {
                 var imageListArray = [];
                 await iterator.forEach(function onEntry(entry) {
                     Zotero.debug(entry);
-                    if (entry.name.includes('.png')) {
+                    if (entry.name.match(/-\d+\.png$/)) {
                         imageListArray.push(entry.path);
                     }
                 });

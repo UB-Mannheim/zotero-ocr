@@ -119,7 +119,8 @@ ZoteroOCR = {
                 if (Zotero.isWin) {
                     ocrEngine += ".exe";
                 }
-                if (await OS.File.exists(ocrEngine)) {
+                let tesseractFound = await OS.File.exists(ocrEngine);
+                if (tesseractFound) {
                     found = true;
                     Zotero.debug("Found " + ocrEngine);
                     Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
@@ -140,10 +141,22 @@ ZoteroOCR = {
         // Look for a specific path in the preferences for pdftoppm
         let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
         if (!pdftoppm) {
-            // alternatively use the also the Zotero directory to look for pdftoppm
-            pdftoppm = zdir.clone();
-            pdftoppm.append("pdftoppm");
-            pdftoppm = pdftoppm.path;
+            // look for pdftoppm in various possible directories
+            let path = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", zdir.clone()];
+            for (pdftoppm of path) {
+                pdftoppm += "pdftoppm";
+                if (Zotero.isWin) {
+                    ocrEngine += ".exe";
+                }
+                let pdftoppmFound = await OS.File.exists(pdftoppm);
+                if (pdftoppmFound) {
+                    found = true;
+                    Zotero.debug("Found " + pdftoppm);
+                    Zotero.Prefs.set("zoteroocr.pdftoppmPath", pdftoppm);
+                    break;
+                }
+                Zotero.debug("No " + pdftoppm);
+            }
         }
         if (Zotero.isWin && !(pdftoppm.endsWith(".exe"))) {
             pdftoppm = pdftoppm + ".exe";
@@ -183,7 +196,7 @@ ZoteroOCR = {
             let pdf = pdfItem.getFilePath();
             let base = pdf.replace(/\.pdf$/, '');
             let dir = OS.Path.dirname(pdf);
-            let infofile = dir + '/pdfinfo.txt';
+            // let infofile = dir + '/pdfinfo.txt';
             let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
             // TODO filter out PDFs which have already a text layer
 

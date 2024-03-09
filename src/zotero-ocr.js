@@ -28,6 +28,7 @@ ZoteroOCR = {
         let doc = window.document;
         
         // Add a stylesheet to the main Zotero pane
+        /*
         let link1 = doc.createElement('link');
         link1.id = 'make-it-red-stylesheet';
         link1.type = 'text/css';
@@ -35,6 +36,7 @@ ZoteroOCR = {
         link1.href = this.rootURI + 'style.css';
         doc.documentElement.appendChild(link1);
         this.storeAddedElement(link1);
+        */
         
         // Use Fluent for localization
         window.MozXULElement.insertFTLIfNeeded("zotero-ocr.ftl");

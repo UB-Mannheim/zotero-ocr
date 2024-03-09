@@ -1,7 +1,0 @@
-content zoteroocr chrome/content/
-
-overlay chrome://zotero/content/zoteroPane.xul chrome://zoteroocr/content/overlay.xul
-
-locale  zoteroocr  en-US   chrome/locale/en-US/
-
-skin    zoteroocr  default chrome/skin/default/zoteroocr/

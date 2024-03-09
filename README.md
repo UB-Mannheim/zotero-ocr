@@ -35,7 +35,7 @@ The configuration can be accessed under Tools → Zotero OCR Preferences.
 
 By default the fields for the paths to the OCR engine and pdftoppm are empty,
 which means, that the usual locations are looked at. If that does not work,
-then you should locate the tools on your local mashine and enter the full
+then you should locate the tools on your local machine and enter the full
 paths including the name of the tools itself.
 
 The default language/script to use with Tesseract, can only be one of the installed

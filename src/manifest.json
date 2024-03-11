@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
   "name": "Zotero OCR",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Zotero Plugin for OCR",
   "author": "Philipp Zumstein",
   "homepage_url": "https://github.com/UB-Mannheim/zotero-ocr",
   "icons": {
-    "32": "chrome/skin/default/zoteroocr/ubmannheim32x32.png",
-    "64": "chrome/skin/default/zoteroocr/ubmannheim64x64.png"
+    "48": "chrome/skin/default/zoteroocr/ubmannheim48x48.png",
+    "96": "chrome/skin/default/zoteroocr/ubmannheim96x96.png"
   },
   "applications": {
     "zotero": {

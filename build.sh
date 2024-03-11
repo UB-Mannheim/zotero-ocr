@@ -1,8 +1,11 @@
 #!/bin/sh
 
 version="$1"
+if [ -z "$version" -a -d .git ]; then
+  version=$(git describe --tags)
+fi
 if [ -z "$version" ]; then
-	read -p "Enter new version number: " version
+  read -p "Enter new version number: " version
 fi
 
 

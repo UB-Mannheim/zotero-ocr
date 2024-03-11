@@ -1,0 +1,26 @@
+   <vbox>
+        <groupbox>
+            <caption label="OCR parameters"/>
+            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
+            <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
+            <label value="Full location of the pdftoppm executable:"/>
+            <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
+            <hbox>
+                <label value="Choose a language/script you want to use for recognition (default is eng):"/>
+                <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>
+            </hbox>
+        </groupbox>
+        <groupbox>
+            <caption label="Output options"/>
+            <checkbox preference="extensions.zotero.zoteroocr.outputNote" label="Save output as a note"/>
+            <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" label="Save output as a PDF with text layer" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
+            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="extensions.zotero.zoteroocr.overwritePDF" label="Overwrite the initial PDF with the output" class="indented-pref"/>
+            <checkbox preference="xtensions.zotero.zoteroocr.outputHocr" label="Save output as a HTML/hocr file(s)"/>
+            <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
+            <hbox class="indented-pref">
+              <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
+              <html:input type="text" id="pref-zoteroocr-max-html-pages" preference="extensions.zotero.zoteroocr.maximumPagesAsHtml" width="20"/>
+            </hbox>
+            <checkbox preference="extensions.zotero.zoteroocr.outputPNG" label="Save the intermediate PNGs as well in the folder"/>
+        </groupbox>
+    </vbox>

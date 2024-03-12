@@ -21,7 +21,7 @@ ZoteroOCR = {
     },
 
     log(msg) {
-        Zotero.debug("ZoteroOCR: " + msg);
+        Zotero.debug("Zotero OCR: " + msg);
     },
 
     addToWindow(window) {
@@ -292,11 +292,5 @@ ZoteroOCR = {
                 }
             }
         }
-    },
-
-    async main() {
-        // Global properties are included automatically in Zotero 7
-        var host = new URL('https://foo.com/path').host;
-        this.log(`Host is ${host}`);
     },
 };

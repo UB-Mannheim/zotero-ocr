@@ -12,7 +12,7 @@ ZoteroOCR = {
     initialized: false,
     addedElementIDs: [],
 
-    init({ id, version, rootURI }) {
+    init({ id, version, rootURI } = {}) {
         if (this.initialized) return;
         this.id = id;
         this.version = version;
@@ -27,11 +27,15 @@ ZoteroOCR = {
     addToWindow(window) {
         let doc = window.document;
 
+        // createElementNS() necessary in Zotero 6; createElement() defaults to HTML in Zotero 7
+        let HTML_NS = "http://www.w3.org/1999/xhtml";
+        let XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
         // Use Fluent for localization
         window.MozXULElement.insertFTLIfNeeded("zotero-ocr.ftl");
 
         // Add menu option
-        let menuitem = doc.createXULElement('menuitem');
+        let menuitem = doc.createElementNS(XUL_NS, 'menuitem');
         menuitem.id = 'ocr-selected-pdfs';
         menuitem.setAttribute('type', 'checkbox');
         menuitem.setAttribute('data-l10n-id', 'ocr-selected-pdfs');
@@ -195,7 +199,6 @@ ZoteroOCR = {
                 catch (e) {
                     Zotero.logError(e);
                 }
-
 
                 var iterator = new OS.File.DirectoryIterator(dir);
                 var imageListArray = [];

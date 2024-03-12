@@ -1,13 +1,13 @@
    <vbox>
         <groupbox>
             <caption label="OCR parameters"/>
-            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
-            <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
+            <label value="TEST1 Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
+            <html:input size="50" style="-moz-box-flex: 1;" type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
             <label value="Full location of the pdftoppm executable:"/>
-            <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
+            <html:input size="50" style="flex: 1;" type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
-                <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>
+                <html:input size="15" type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language"/>
             </hbox>
         </groupbox>
         <groupbox>
@@ -19,7 +19,7 @@
             <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
             <hbox class="indented-pref">
               <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
-              <html:input type="text" id="pref-zoteroocr-max-html-pages" preference="extensions.zotero.zoteroocr.maximumPagesAsHtml" width="20"/>
+              <html:input size="15" type="text" id="pref-zoteroocr-max-html-pages" preference="extensions.zotero.zoteroocr.maximumPagesAsHtml"/>
             </hbox>
             <checkbox preference="extensions.zotero.zoteroocr.outputPNG" label="Save the intermediate PNGs as well in the folder"/>
         </groupbox>

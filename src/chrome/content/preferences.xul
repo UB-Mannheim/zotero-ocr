@@ -34,13 +34,13 @@
         </preferences>
         <groupbox>
             <caption label="OCR parameters"/>
-            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
-            <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+            <label value="TEST2 Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
+            <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath" size="40"/>
             <label value="Full location of the pdftoppm executable:"/>
-            <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
+            <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath" size="40"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
-                <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>
+                <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" size="15"/>
             </hbox>
         </groupbox>
         <groupbox>
@@ -52,7 +52,7 @@
             <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
             <hbox class="indented-pref">
               <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
-              <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" width="20"/>
+              <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" size="10"/>
             </hbox>
             <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate PNGs as well in the folder"/>
         </groupbox>

@@ -17,8 +17,7 @@ async function startup({ id, version, rootURI }) {
 		src: rootURI + 'prefs.xhtml'
 	});
 
-	Services.scriptloader.loadSubScript(rootURI + 'zotero-ocr.js');
-	//Services.scriptloader.loadSubScript(rootURI + 'chrome/content/zoteroocr.js');
+	Services.scriptloader.loadSubScript(rootURI + 'chrome/content/zoteroocr.js');
 	ZoteroOCR.init({ id, version, rootURI });
 	ZoteroOCR.addToAllWindows();
 }

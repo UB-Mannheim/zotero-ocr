@@ -10,6 +10,7 @@ function install() {
 
 async function startup({ id, version, rootURI }) {
 	log("Starting");
+	log("id=" + id + ", version=" + version + ", rootURI=" + rootURI);
 
 	Zotero.PreferencePanes.register({
 		pluginID: 'zotero-ocr@uni-mannheim.de',
@@ -21,7 +22,6 @@ async function startup({ id, version, rootURI }) {
 	//Services.scriptloader.loadSubScript(rootURI + 'chrome/content/zoteroocr.js');
 	ZoteroOCR.init({ id, version, rootURI });
 	ZoteroOCR.addToAllWindows();
-	await ZoteroOCR.main();
 }
 
 function onMainWindowLoad({ window }) {

@@ -27,17 +27,6 @@ ZoteroOCR = {
     addToWindow(window) {
         let doc = window.document;
         
-        // Add a stylesheet to the main Zotero pane
-        /*
-        let link1 = doc.createElement('link');
-        link1.id = 'make-it-red-stylesheet';
-        link1.type = 'text/css';
-        link1.rel = 'stylesheet';
-        link1.href = this.rootURI + 'style.css';
-        doc.documentElement.appendChild(link1);
-        this.storeAddedElement(link1);
-        */
-        
         // Use Fluent for localization
         window.MozXULElement.insertFTLIfNeeded("zotero-ocr.ftl");
         
@@ -48,11 +37,35 @@ ZoteroOCR = {
         menuitem.setAttribute('data-l10n-id', 'ocr-selected-pdfs');
         // MozMenuItem#checked is available in Zotero 7
         menuitem.addEventListener('command', () => {
-            //ZoteroOCR.toggleGreen(window, menuitem.checked);
             ZoteroOCR.recognize(window);
         });
         doc.getElementById('menu_ToolsPopup').appendChild(menuitem);
         this.storeAddedElement(menuitem);
+
+
+        let popupmenuitem = doc.createXULElement('menuitem');
+        popupmenuitem.id = 'zotero-ocr-item-menu';
+        popupmenuitem.class = 'menuitem-iconic zotero-menuitem-ocr'
+        //popupmenuitem.setAttribute('type', 'checkbox');
+        popupmenuitem.setAttribute('data-l10n-id', 'ocr-selected-pdfs');
+        doc.getElementById('zotero-itemmenu').appendChild(popupmenuitem);
+        popupmenuitem.addEventListener('command', () => {
+            ZoteroOCR.recognize(window);
+        });
+        this.storeAddedElement(popupmenuitem);
+
+        /*
+        const menupopup = doc.getElementById("zotero-itemmenu").appendChild(elements.create("menu", {
+          id: "zotero-ocr-item-menu",
+          label: "Zotero-OCR" //,
+          //class: "menuitem-iconic",
+          //image: "chrome://zotero-better-bibtex/content/skin/bibtex-menu.svg"
+        })).appendChild(elements.create("menupopup"));
+        menupopup.appendChild(elements.create("menuitem", {
+          label: "Test OCR",
+          oncommand: () => ZoteroOCR.recognize(window)
+        }));
+        */
     },
     
     addToAllWindows() {
@@ -85,11 +98,6 @@ ZoteroOCR = {
             if (!win.ZoteroPane) continue;
             this.removeFromWindow(win);
         }
-    },
-    
-    toggleGreen(window, enabled) {
-        window.document.documentElement
-            .toggleAttribute('data-green-instead', enabled);
     },
     
     async recognize(window) {
@@ -311,9 +319,6 @@ ZoteroOCR = {
     async main() {
         // Global properties are included automatically in Zotero 7
         var host = new URL('https://foo.com/path').host;
-        this.log(`Host is ${host}`);
         
-        // Retrieve a global pref
-        this.log(`Intensity is ${Zotero.Prefs.get('extensions.make-it-red.intensity', true)}`);
     },
 };

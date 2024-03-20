@@ -4,7 +4,7 @@
     xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <RDF:Description
         RDF:about="urn:mozilla:install-manifest"
-        em:id="zotero-ocr@bib.uni-mannheim.de"
+        em:id="zotero-ocr@uni-mannheim.de"
         em:name="Zotero OCR"
         em:version="0.6.0"
         em:type="2"

@@ -11,7 +11,7 @@ ZoteroOCR = {
     rootURI: null,
     initialized: false,
     addedElementIDs: [],
-    
+
     init({ id, version, rootURI }) {
         if (this.initialized) return;
         this.id = id;
@@ -19,17 +19,17 @@ ZoteroOCR = {
         this.rootURI = rootURI;
         this.initialized = true;
     },
-    
+
     log(msg) {
         Zotero.debug("ZoteroOCR: " + msg);
     },
-    
+
     addToWindow(window) {
         let doc = window.document;
-        
+
         // Use Fluent for localization
         window.MozXULElement.insertFTLIfNeeded("zotero-ocr.ftl");
-        
+
         // Add menu option
         let menuitem = doc.createXULElement('menuitem');
         menuitem.id = 'ocr-selected-pdfs';
@@ -67,7 +67,7 @@ ZoteroOCR = {
         }));
         */
     },
-    
+
     addToAllWindows() {
         var windows = Zotero.getMainWindows();
         for (let win of windows) {
@@ -75,14 +75,14 @@ ZoteroOCR = {
             this.addToWindow(win);
         }
     },
-    
+
     storeAddedElement(elem) {
         if (!elem.id) {
             throw new Error("Element must have an id");
         }
         this.addedElementIDs.push(elem.id);
     },
-    
+
     removeFromWindow(window) {
         var doc = window.document;
         // Remove all elements added to DOM
@@ -91,7 +91,7 @@ ZoteroOCR = {
         }
         doc.querySelector('[href="zotero-ocr.ftl"]').remove();
     },
-    
+
     removeFromAllWindows() {
         var windows = Zotero.getMainWindows();
         for (let win of windows) {
@@ -99,7 +99,7 @@ ZoteroOCR = {
             this.removeFromWindow(win);
         }
     },
-    
+
     async recognize(window) {
 
         // Look for the tesseract executable in the settings and at commonly used locations.
@@ -221,7 +221,6 @@ ZoteroOCR = {
                     Zotero.logError(e);
                 }
 
-                
                 var iterator = new OS.File.DirectoryIterator(dir);
                 var imageListArray = [];
                 await iterator.forEach(function onEntry(entry) {
@@ -232,7 +231,7 @@ ZoteroOCR = {
                 });
                 Zotero.debug('Files are now:')
                 Zotero.debug(imageListArray);
-  
+
                 // save the list of images in a separate file
                 Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
 
@@ -267,7 +266,7 @@ ZoteroOCR = {
                 newNote.parentID = item.id;
                 await newNote.saveTx();
             }
-            
+
             if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
                 let contents = await Zotero.File.getContentsAsync(ocrbase + '.hocr');
                 // replace the absolute paths of images with relative ones
@@ -304,7 +303,7 @@ ZoteroOCR = {
                     parentItemID: item.id
                 });
             }
-            
+
             if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
                 // delete image list
                 await Zotero.File.removeIfExists(imageList);
@@ -315,10 +314,9 @@ ZoteroOCR = {
             }
         }
     },
-    
+
     async main() {
         // Global properties are included automatically in Zotero 7
         var host = new URL('https://foo.com/path').host;
-        
     },
 };

@@ -1,5 +1,5 @@
 ocr-selected-pdfs =
     .label = OCR selected PDF(s)
 
-ocr-preferences = 
+ocr-preferences =
     .label = Zotero OCR Preferences

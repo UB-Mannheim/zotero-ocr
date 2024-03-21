@@ -14,6 +14,7 @@ async function startup({ id, version, rootURI }) {
 
 	log("Starting (register)");
 	Zotero.PreferencePanes.register({
+		image: 'chrome/skin/default/zoteroocr/ubmannheim48x48.png',
 		pluginID: 'zotero-ocr@uni-mannheim.de',
 		src: rootURI + 'prefs.xhtml'
 	});

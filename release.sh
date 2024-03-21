@@ -1,6 +1,9 @@
 #!/bin/sh
 
-read -p "Enter new version number: " version
+version="$1"
+if [ -z "$version" ]; then
+        read -p "Enter new version number: " version
+fi
 
 
 ##############

@@ -19,7 +19,7 @@ async function startup({ id, version, rootURI }) {
 	});
 
 	log("Starting (loadSubScript)");
-	Services.scriptloader.loadSubScript(rootURI + 'chrome/content/zoteroocr.js');
+	Services.scriptloader.loadSubScript(rootURI + 'zoteroocr.js');
 	log("Starting (init)");
 	ZoteroOCR.init({ id, version, rootURI });
 	log("Starting (addToAllWindows)");

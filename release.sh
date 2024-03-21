@@ -8,7 +8,6 @@ read -p "Enter new version number: " version
 ##############
 
 perl -pi -e "s/em:version=\"[^\"]*/em:version=\"$version/;" "install.rdf"
-rm "install.rdf.bak"
 git add "install.rdf"
 
 
@@ -21,7 +20,6 @@ perl -pi -e "s/<em:version>[^<]*/<em:version>$version/;" \
           -e "s/<em:updateInfoURL>[^<]*/<em:updateInfoURL>https:\/\/github.com\/UB-Mannheim\/zotero-ocr\/releases\/tag\/$version/;" \
     update.rdf
 git add "update.rdf"
-rm "update.rdf.bak"
 
 
 git commit -m "Release $version" 1>&2

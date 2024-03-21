@@ -35,16 +35,14 @@ addedElementIDs: [],
         window.MozXULElement.insertFTLIfNeeded("zotero-ocr.ftl");
 
         // Add menu option
-        let menuitem = doc.createElementNS(XUL_NS, 'menuitem');
+        let menuitem = doc.createXULElement('menuitem');
         menuitem.id = 'ocr-selected-pdfs';
-        menuitem.setAttribute('type', 'checkbox');
+        menuitem.class = 'menuitem-iconic zotero-menuitem-ocr'
         menuitem.setAttribute('data-l10n-id', 'ocr-selected-pdfs');
-        // MozMenuItem#checked is available in Zotero 7
+        doc.getElementById('zotero-itemmenu').appendChild(menuitem);
         menuitem.addEventListener('command', () => {
-            // Zotero.OCR.openPreferenceWindow();
             ZoteroOCR.recognize(window);
         });
-        doc.getElementById('menu_ToolsPopup').appendChild(menuitem);
         this.storeAddedElement(menuitem);
     },
 

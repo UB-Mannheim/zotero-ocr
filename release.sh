@@ -7,9 +7,9 @@ read -p "Enter new version number: " version
 ## Update install.rdf
 ##############
 
-perl -pi -e "s/em:version=\"[^\"]*/em:version=\"$version/;" "install.rdf"
+perl -pi -e "s/em:version=\"[^\"]*/em:version=\"$version/;" src/install.rdf
 rm "install.rdf.bak"
-git add "install.rdf"
+git add src/install.rdf
 
 
 ##############

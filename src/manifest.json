@@ -5,8 +5,8 @@
   "description": "Zotero Plugin for OCR",
   "author": "Philipp Zumstein",
   "icons": {
-    "32": "ubmannheim32x32.png",
-    "64": "ubmannheim64x64.png"
+    "32": "chrome/skin/default/zoteroocr/ubmannheim32x32.png",
+    "64": "chrome/skin/default/zoteroocr/ubmannheim64x64.png"
   },
   "applications": {
     "zotero": {

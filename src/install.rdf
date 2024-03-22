@@ -7,7 +7,6 @@
         em:id="zotero-ocr@bib.uni-mannheim.de"
         em:name="Zotero OCR"
         em:version="0.6.0"
-        em:type="2"
         em:iconURL="chrome://zoteroocr/skin/ubmannheim.png"
         em:icon64URL="chrome://zoteroocr/skin/ubmannheim64x64.png"
         em:creator="Philipp Zumstein"

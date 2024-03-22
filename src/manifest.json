@@ -4,6 +4,7 @@
   "version": "0.6.1",
   "description": "Zotero Plugin for OCR",
   "author": "Philipp Zumstein",
+  "homepage_url": "https://github.com/UB-Mannheim/zotero-ocr",
   "icons": {
     "32": "chrome/skin/default/zoteroocr/ubmannheim32x32.png",
     "64": "chrome/skin/default/zoteroocr/ubmannheim64x64.png"

@@ -10,13 +10,13 @@ function install() {
 
 async function startup({ id, version, rootURI }) {
 	log("Starting Zotero OCR");
-	
+
 	Zotero.PreferencePanes.register({
 		pluginID: 'zotero-ocr@bib.uni-mannheim.de',
 		src: rootURI + 'prefs.xhtml',
 		//scripts: [rootURI + 'prefs.js']
 	});
-	
+
 	Services.scriptloader.loadSubScript(rootURI + 'zotero-ocr.js');
 	ZoteroOCR.init({ id, version, rootURI });
 	ZoteroOCR.addToAllWindows();

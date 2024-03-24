@@ -5,11 +5,11 @@ function log(msg) {
 }
 
 function install() {
-	log("Installed Zotero OCR");
+	log("Installed");
 }
 
 async function startup({ id, version, rootURI }) {
-	log("Starting Zotero OCR");
+	log("Starting");
 
 	Zotero.PreferencePanes.register({
 		pluginID: 'zotero-ocr@bib.uni-mannheim.de',
@@ -31,11 +31,11 @@ function onMainWindowUnload({ window }) {
 }
 
 function shutdown() {
-	log("Shutting down Zotero OCR");
+	log("Shutting down");
 	ZoteroOCR.removeFromAllWindows();
 	ZoteroOCR = undefined;
 }
 
 function uninstall() {
-	log("Uninstalled Zotero OCR");
+	log("Uninstalled");
 }

@@ -20,7 +20,6 @@ async function startup({ id, version, rootURI }) {
 	Services.scriptloader.loadSubScript(rootURI + 'zotero-ocr.js');
 	ZoteroOCR.init({ id, version, rootURI });
 	ZoteroOCR.addToAllWindows();
-	await ZoteroOCR.main();
 }
 
 function onMainWindowLoad({ window }) {

@@ -21,7 +21,7 @@ perl -pi -e "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" src/manifest.
 ./build.sh "$version"
 
 perl -pi -e "s/\"version\": \"[^\"]*\",/\"version\": \"${version}\",/" updates.json
-perl -pi -e "s/\"update_link\": \"[^\"]*\",/\"update_link\": \"https:\/\/github.com\/UB-Mannheim\/zotero-ocr\/releases\/tag\/${version}\/zotero-ocr-${version}.xpi\",/" updates.json
+perl -pi -e "s/\"update_link\": \"[^\"]*\",/\"update_link\": \"https:\/\/github.com\/UB-Mannheim\/zotero-ocr\/releases\/download\/${version}\/zotero-ocr-${version}.xpi\",/" updates.json
 perl -pi -e "s/\"update_hash\": \"[^\"]*\",/\"update_hash\": \"sha256:$(shasum -a 256 build\/zotero-ocr-${version}.xpi | cut -d' ' -f1)\",/" updates.json
 cp updates.json update.rdf
 

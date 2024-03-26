@@ -14,7 +14,7 @@ Zotero.OCR = new function() {
 				'chrome,titlebar,toolbar,centerscreen' + Zotero.Prefs.get('browser.preferences.instantApply', true) ? 'dialog=no' : 'modal', io
 		);
 	};
-	
+
 	// disable or enable the nested option to overwrite PDF
 	this.updatePDFOverwritePref = function () {
 		setTimeout(() => {
@@ -181,8 +181,8 @@ Zotero.OCR = new function() {
 				newNote.parentID = item.id;
 				yield newNote.saveTx();
 			}
-			
-			
+
+
 			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
 				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.hocr');
 				// replace the absolute paths of images with relative ones
@@ -219,7 +219,7 @@ Zotero.OCR = new function() {
 					parentItemID: item.id
 				});
 			}
-			
+
 			if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
 				// delete image list
 				yield Zotero.File.removeIfExists(imageList);

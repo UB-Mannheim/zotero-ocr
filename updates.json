@@ -5,7 +5,11 @@
         {
           "version": "0.7.0",
           "update_link": "https://github.com/UB-Mannheim/zotero-ocr/releases/tag/0.7.0/zotero-ocr-0.7.0.xpi",
+          "update_hash": "sha256:b649b6a7b75138b65896eca1142999fd5dfa2e0db056c0cea17917a867cc095b",
           "applications": {
+            "gecko": {
+              "strict_min_version": "60.0"
+            },
             "zotero": {
               "strict_min_version": "6.999"
             }

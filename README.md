@@ -31,7 +31,8 @@ To install the extension:
 
 ## Configuration
 
-The configuration can be accessed under Tools → Zotero OCR Preferences.
+The configuration can be accessed under Tools → Zotero OCR Preferences (Zotero 6)
+or under Zotero → Settings (Zotero 7).
 
 By default the fields for the paths to the OCR engine and pdftoppm are empty,
 which means, that the usual locations are looked at. If that does not work,
@@ -53,15 +54,19 @@ are also available through the
 
 Run `build.sh` script, which creates a new `.xpi` file.
 
-For a new release, run the script `release.sh`, push the code changes, publish a [new release on GitHub](https://github.com/UB-Mannheim/zotero-ocr/releases/new) and attach the `.xpi` file there.
+For a new release, run the script `release.sh`.
+It runs the `build.sh` script, commits the code changes for the new release and adds a tag.
+Push the updated local master branch and the tag to GitHub.
+Then publish a [new release on GitHub](https://github.com/UB-Mannheim/zotero-ocr/releases/new) and attach the `.xpi` file there.
 
 
 ## Development
 
 After any code changes one can build a new extension file by `./build.sh <version>`.
 Then in Zotero go to `Tools`, `Add-ons`, `Install Add-on From File...`
-and choose there the newly created `.xpi`-file. Zotero will restart with the
-newly built add-on version.
+and choose there the newly created `.xpi`-file.
+Zotero 6 will restart with the newly built add-on version.
+Zotero 7 does not require a restart and will activate it immediately.
 
 If any error occurs then you will see more details in the `Help`, `Report Error...`
 dialog. For some debugging messages you can activate in Zotero the debugging

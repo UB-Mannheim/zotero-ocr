@@ -2,8 +2,7 @@
 
 // See https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules.
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
-Components.utils.import("resource://gre/modules/osfile.jsm");
-
+// Components.utils.import("resource://gre/modules/osfile.jsm");
 
 ZoteroOCR = {
     id: null,
@@ -87,14 +86,14 @@ ZoteroOCR = {
             // If a directory is given, then try for the standard name of the tool.
             if (pathOrFile.isDirectory()) {
                 if (Zotero.isWin) {
-                    ocrEngine = OS.Path.join(ocrEngine, "tesseract.exe");
+                    ocrEngine = PathUtils.join(ocrEngine, "tesseract.exe");
                 }
                 else {
-                    ocrEngine = OS.Path.join(ocrEngine, "tesseract");
+                    ocrEngine = PathUtils.join(ocrEngine, "tesseract");
                 }
                 Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
             }
-            found = await OS.File.exists(ocrEngine);
+            found = await IOUtils.exists(ocrEngine);
         }
         else {
             let path = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
@@ -103,7 +102,7 @@ ZoteroOCR = {
                 if (Zotero.isWin) {
                     ocrEngine += ".exe";
                 }
-                let tesseractFound = await OS.File.exists(ocrEngine);
+                let tesseractFound = await IOUtils.exists(ocrEngine);
                 if (tesseractFound) {
                     found = true;
                     Zotero.debug("Found " + ocrEngine);
@@ -132,7 +131,7 @@ ZoteroOCR = {
                 if (Zotero.isWin) {
                     ocrEngine += ".exe";
                 }
-                let pdftoppmFound = await OS.File.exists(pdftoppm);
+                let pdftoppmFound = await IOUtils.exists(pdftoppm);
                 if (pdftoppmFound) {
                     found = true;
                     Zotero.debug("Found " + pdftoppm);
@@ -145,7 +144,7 @@ ZoteroOCR = {
         if (Zotero.isWin && !(pdftoppm.endsWith(".exe"))) {
             pdftoppm = pdftoppm + ".exe";
         }
-        if (!(await OS.File.exists(pdftoppm))) {
+        if (!(await IOUtils.exists(pdftoppm))) {
             window.alert("No " + pdftoppm + " executable found.");
             return;
         }
@@ -179,14 +178,14 @@ ZoteroOCR = {
             }
             let pdf = pdfItem.getFilePath();
             let base = pdf.replace(/\.pdf$/, '');
-            let dir = OS.Path.dirname(pdf);
+            let dir = PathUtils.parent(pdf);
             // let infofile = dir + '/pdfinfo.txt';
             let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
             // TODO filter out PDFs which have already a text layer
 
             // extract images from PDF
-            let imageList = OS.Path.join(dir, 'image-list.txt');
-            if (!(await OS.File.exists(imageList))) {
+            let imageList = PathUtils.join(dir, 'image-list.txt');
+            if (!(await IOUtils.exists(imageList))) {
                 try {
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
                     await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
@@ -195,7 +194,7 @@ ZoteroOCR = {
                     Zotero.logError(e);
                 }
 
-                var iterator = new OS.File.DirectoryIterator(dir);
+                var iterator = new IOUtils.DirectoryIterator(dir);
                 var imageListArray = [];
                 await iterator.forEach(function onEntry(entry) {
                     Zotero.debug(entry);
@@ -259,11 +258,11 @@ ZoteroOCR = {
                 }
                 for (let i = 1; i < upperLimit; i++) {
                     let pagename = 'page-' + i + '.html';
-                    let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
+                    let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
                     let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +   '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                     Zotero.File.putContents(htmlfile, pagecontent);
                     await Zotero.Attachments.linkFromFile({
-                        file: OS.Path.join(dir, pagename),
+                        file: PathUtils.join(dir, pagename),
                         contentType: "text/html",
                         parentItemID: item.id
                     });

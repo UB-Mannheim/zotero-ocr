@@ -6,8 +6,8 @@
   "author": "Philipp Zumstein",
   "homepage_url": "https://github.com/UB-Mannheim/zotero-ocr",
   "icons": {
-    "32": "chrome/skin/default/zoteroocr/ubmannheim32x32.png",
-    "64": "chrome/skin/default/zoteroocr/ubmannheim64x64.png"
+    "48": "chrome/skin/default/zoteroocr/ocr-symbol.svg",
+    "96": "chrome/skin/default/zoteroocr/ocr-symbol.svg"
   },
   "applications": {
     "zotero": {

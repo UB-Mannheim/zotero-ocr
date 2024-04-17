@@ -12,7 +12,7 @@ async function startup({ id, version, rootURI }) {
 	log("Starting");
 
 	Zotero.PreferencePanes.register({
-		image: 'chrome/skin/default/zoteroocr/ubmannheim32x32.png',
+		image: 'chrome/skin/default/zoteroocr/ocr-symbol.svg',
 		pluginID: 'zotero-ocr@bib.uni-mannheim.de',
 		src: rootURI + 'prefs.xhtml'
 	});

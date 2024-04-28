@@ -194,20 +194,23 @@ ZoteroOCR = {
                     Zotero.logError(e);
                 }
 
-                var iterator = new IOUtils.DirectoryIterator(dir);
                 var imageListArray = [];
-                await iterator.forEach(function onEntry(entry) {
-                    Zotero.debug(entry);
-                    if (entry.name.match(/-\d+\.png$/)) {
-                        imageListArray.push(entry.path);
+                
+                await IOUtils.getChildren(dir).then(
+                    (entries) => {
+                        for (const entry of entries) {
+                            Zotero.debug('IOutils.getChildren() ran', entry);
+                            if (entry.match(/-\d+\.png$/)) {
+                                        imageListArray.push(entry);
+                            }
+                        }
+                        Zotero.debug('Files are now:')
+                        Zotero.debug(imageListArray);
+
+                        // save the list of images in a separate file
+                        Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
                     }
-                });
-                Zotero.debug('Files are now:')
-                Zotero.debug(imageListArray);
-
-                // save the list of images in a separate file
-                Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
-
+                );
             }
 
             let parameters = [dir + '/image-list.txt'];

@@ -11,7 +11,7 @@ ZoteroOCR = {
     initialized: false,
     addedElementIDs: [],
 
-    init({ id, version, rootURI }) {
+    init({id, version, rootURI}) {
         if (this.initialized) return;
         this.id = id;
         this.version = version;
@@ -87,15 +87,13 @@ ZoteroOCR = {
             if (pathOrFile.isDirectory()) {
                 if (Zotero.isWin) {
                     ocrEngine = PathUtils.join(ocrEngine, "tesseract.exe");
-                }
-                else {
+                } else {
                     ocrEngine = PathUtils.join(ocrEngine, "tesseract");
                 }
                 Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
             }
             found = await IOUtils.exists(ocrEngine);
-        }
-        else {
+        } else {
             let path = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
             for (ocrEngine of path) {
                 ocrEngine += "tesseract";
@@ -157,13 +155,11 @@ ZoteroOCR = {
                 if (item.isFileAttachment() && item.attachmentContentType == 'application/pdf') {
                     pdfItem = item;
                     item = Zotero.Items.get(item.parentItemID);
-                }
-                else {
+                } else {
                     window.alert("Item is attachment but not PDF and will be ignored.");
                     continue;
                 }
-            }
-            else {
+            } else {
                 let pdfAttachments = item.getAttachments(false)
                     .map(itemID => Zotero.Items.get(itemID))
                     .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
@@ -186,24 +182,27 @@ ZoteroOCR = {
             // extract images from PDF
             let imageList = PathUtils.join(dir, 'image-list.txt');
             if (!(await IOUtils.exists(imageList))) {
+
                 try {
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
                     await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
-                }
-                catch (e) {
+                } catch (e) {
                     Zotero.logError(e);
                 }
 
                 var imageListArray = [];
-                
-                await IOUtils.getChildren(dir).then(
-                    (entries) => {
-                        for (const entry of entries) {
-                            Zotero.debug('IOutils.getChildren() ran', entry);
-                            if (entry.match(/-\d+\.png$/)) {
-                                        imageListArray.push(entry);
-                            }
+
+                await IOUtils.getChildren(dir).then((entries) => {
+
+                        // Count the pages by matching them against the predicate
+                        let pages = entries.filter(entry => entry.match(/-\d+\.png$/))
+                            .length;
+
+                        for (let i = 0; i < pages; i++) {
+                            let pageName = String(i + 1).padStart(2, '0');
+                            imageListArray.push(PathUtils.join(dir, 'page-' + pageName + '.png'));
                         }
+
                         Zotero.debug('Files are now:')
                         Zotero.debug(imageListArray);
 
@@ -229,8 +228,7 @@ ZoteroOCR = {
             try {
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
                 await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
-            }
-            catch (e) {
+            } catch (e) {
                 Zotero.logError(e);
             }
 
@@ -262,7 +260,7 @@ ZoteroOCR = {
                 for (let i = 1; i < upperLimit; i++) {
                     let pagename = 'page-' + i + '.html';
                     let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
-                    let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +   '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
+                    let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                     Zotero.File.putContents(htmlfile, pagecontent);
                     await Zotero.Attachments.linkFromFile({
                         file: PathUtils.join(dir, pagename),

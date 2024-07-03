@@ -180,37 +180,30 @@ ZoteroOCR = {
             // TODO filter out PDFs which have already a text layer
 
             // extract images from PDF
-            let imageList = PathUtils.join(dir, 'image-list.txt');
-            if (!(await IOUtils.exists(imageList))) {
 
+            // extract images from PDF
+            let imageList = OS.Path.join(dir, 'image-list.txt');
+            if (!(await OS.File.exists(imageList))) {
                 try {
+                    Zotero.debug("Running " + pdfinfo + ' ' + pdf + ' ' + infofile);
+                    yawaitield Zotero.Utilities.Internal.exec(pdfinfo, [pdf, infofile]);
                     Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
-                    await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
-                } catch (e) {
+                    await Zotero.Utilities.Internal.exec(pdftoppm, ['-png', '-r', 300, pdf, dir + '/page']);
+                }
+                catch (e) {
                     Zotero.logError(e);
                 }
-
+                // save the list of images in a separate file
+                let info = await Zotero.File.getContentsAsync(infofile);
+                let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
                 var imageListArray = [];
-
-                await IOUtils.getChildren(dir).then((entries) => {
-
-                        // Count the pages by matching them against the predicate
-                        let pages = entries.filter(entry => entry.match(/-\d+\.png$/))
-                            .length;
-
-                        for (let i = 0; i < pages; i++) {
-                            let pageName = String(i + 1).padStart(2, '0');
-                            imageListArray.push(PathUtils.join(dir, 'page-' + pageName + '.png'));
-                        }
-
-                        Zotero.debug('Files are now:')
-                        Zotero.debug(imageListArray);
-
-                        // save the list of images in a separate file
-                        Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
-                    }
-                );
+                for (let i = 1; i <= parseInt(numPages, 10); i++) {
+                    let paddedIndex = "0".repeat(numPages.length) + i;
+                    imageListArray.push(dir + '/page-' + paddedIndex.substring(-numPages.length) + '.png');
+                }
+                Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
             }
+
 
             let parameters = [dir + '/image-list.txt'];
             parameters.push(ocrbase);

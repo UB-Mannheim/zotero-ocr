@@ -206,6 +206,8 @@ ZoteroOCR = {
                         }
                         Zotero.debug('Files are now:')
                         Zotero.debug(imageListArray);
+                        // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
+                        imageListArray.sort();
 
                         // save the list of images in a separate file
                         Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));

@@ -102,6 +102,11 @@ Zotero.OCR = new function() {
 			if (item.isAttachment()) {
 				if (item.isFileAttachment() && item.attachmentContentType == 'application/pdf') {
 					pdfItem = item;
+					// if the PDF has no parent item, there is no reasonable place to attach the output files
+                    // => create an empty parent item to keep things tidy
+                    if (pdfItem.isTopLevelItem()) {
+                        await Zotero.getActiveZoteroPane().createEmptyParent(pdfItem);
+                    } 
 					item = Zotero.Items.get(item.parentItemID);
 				}
 				else {
@@ -179,9 +184,9 @@ Zotero.OCR = new function() {
 				let newNote = new Zotero.Item('note');
 				newNote.setNote(contents);
 				newNote.parentID = item.id;
+				newNote.libraryID = item.libraryID;
 				yield newNote.saveTx();
 			}
-
 
 			if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
 				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.hocr');
@@ -204,19 +209,23 @@ Zotero.OCR = new function() {
 					let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
 					let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +	'<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
 					Zotero.File.putContents(htmlfile, pagecontent);
-					yield Zotero.Attachments.linkFromFile({
+					// Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() did not
+                    await Zotero.Attachments.importFromFile({
 						file: OS.Path.join(dir, pagename),
 						contentType: "text/html",
-						parentItemID: item.id
+						parentItemID: item.id,
+						libraryID: item.libraryID
 					});
 				}
 			}
 
 			// attach PDF if it is a new one
 			if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-				yield Zotero.Attachments.linkFromFile({
+				// Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() did not
+                await Zotero.Attachments.importFromFile({
 					file: ocrbase + '.pdf',
-					parentItemID: item.id
+					parentItemID: item.id,
+					libraryID: item.libraryID
 				});
 			}
 

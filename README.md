@@ -5,9 +5,7 @@
 [![License](https://img.shields.io/github/license/UB-Mannheim/zotero-ocr)](https://github.com/UB-Mannheim/zotero-ocr/blob/master/LICENSE)
 ![Downloads latest release](https://img.shields.io/github/downloads/UB-Mannheim/zotero-ocr/latest/total?color=yellow)
 
-This Zotero plugin adds the functionality to perform an OCR for the PDFs
-selected in Zotero. It can add a new PDF including the recognized text,
-a note with the recognized text only, and HTML (HOCR) file(s).
+This Zotero plugin adds the functionality to perform an OCR for the PDFs selected in Zotero. It can add a new PDF including the recognized text, a note with the recognized text only, and HTML (HOCR) file(s).
 Tesseract OCR is used for the text recognition itself.
 
 
@@ -34,20 +32,19 @@ To install the extension:
 The configuration can be accessed under Tools → Zotero OCR Preferences (Zotero 6)
 or under Zotero → Settings (Zotero 7).
 
-By default the fields for the paths to the OCR engine and pdftoppm are empty,
-which means, that the usual locations are looked at. If that does not work,
-then you should locate the tools on your local machine and enter the full
-paths including the name of the tools itself.
+By default the fields for the paths to the OCR engine and pdftoppm are empty, which means, that the usual locations are looked at. If that does not work, then you should locate the tools on your local machine and enter the full paths including the name of the tools itself.
 
-The default language/script to use with Tesseract, can only be one of the installed
-models. If you leave that field empty, then the English model (eng) will be used, which is
-always installed with Tesseract.
+The default language/script to use with Tesseract, can only be one of the installed models. If you leave that field empty, then the English model (eng) will be used, which is always installed with Tesseract.
+
+The user may:
+- modify the output DPI (by default: 300)
+- modify the Tesseract Page Segmentation Mode (PSM). There are many PSM options one may want to utilize when running Tesseract (see https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html)
+- choose to add the new PDFs as normal attachments or as linked files. Starting with Zotero-OCR 0.8.0, the default is normal attachements, due to some drawbacks with linked files (not possible in group libraries, unwanted files remaining when a user moves attachements to the Trash...).
+
 
 ![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)
 
-Moreover, these options are saved as Zotero preferences variables, which
-are also available through the
-[Config Editor](https://www.zotero.org/support/preferences/advanced).
+Moreover, these options are saved as Zotero preferences variables, which are also available through the [Config Editor](https://www.zotero.org/support/preferences/advanced).
 
 
 ## Build and release
@@ -68,9 +65,7 @@ and choose there the newly created `.xpi`-file.
 Zotero 6 will restart with the newly built add-on version.
 Zotero 7 does not require a restart and will activate it immediately.
 
-If any error occurs then you will see more details in the `Help`, `Report Error...`
-dialog. For some debugging messages you can activate in Zotero the debugging
-in the `Help`, `Debug Output Logging`.
+If any error occurs then you will see more details in the `Help`, `Report Error...` dialog. For some debugging messages you can activate in Zotero the debugging in the `Help`, `Debug Output Logging`.
 
 
 ## License

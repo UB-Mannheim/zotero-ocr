@@ -31,6 +31,9 @@
             <preference id="pref-zoteroocr-output-hocr" name="extensions.zotero.zoteroocr.outputHocr" type="bool"/>
             <preference id="pref-zoteroocr-max-html-pages" name="extensions.zotero.zoteroocr.maximumPagesAsHtml" type="string"/>
             <preference id="pref-zoteroocr-output-png" name="extensions.zotero.zoteroocr.outputPNG" type="bool"/>
+            <preference id="pref-zoteroocr-output-dpi" name="extensions.zotero.zoteroocr.outputDPI" type="string"/>
+            <preference id="pref-zoteroocr-psm-mode" name="extensions.zotero.zoteroocr.outputPSMMode" type="string"/>
+            <preference id="pref-zoteroocr-output-as-copy-attachment" name="extensions.zotero.zoteroocr.outputAsCopyAttachment" type="bool"/>
         </preferences>
         <groupbox>
             <caption label="OCR parameters"/>
@@ -41,6 +44,14 @@
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>
+            </hbox>
+            <hbox>
+                <label value="Output pdf dpi (default is 300):"/>
+                <textbox id="pref-zoteroocr-output-dpi-value" preference="pref-zoteroocr-output-dpi" width="100"/>
+            </hbox>
+            <hbox>
+                <label value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
+                <textbox id="pref-zoteroocr-psm-mode-value" preference="pref-zoteroocr-psm-mode" width="70"/>
             </hbox>
         </groupbox>
         <groupbox>
@@ -55,6 +66,7 @@
               <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" width="20"/>
             </hbox>
             <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate PNGs as well in the folder"/>
+            <checkbox preference="pref-zoteroocr-output-as-copy-attachment" label="Import the resulting PDF as a copy instead of as a file link"/>
         </groupbox>
     </prefpane>
 

@@ -185,7 +185,6 @@ ZoteroOCR = {
             let pdf = pdfItem.getFilePath();
             let base = pdf.replace(/\.pdf$/, '');
             let dir = PathUtils.parent(pdf);
-            // let infofile = dir + '/pdfinfo.txt';
             let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
             // TODO filter out PDFs which have already a text layer
 
@@ -193,8 +192,9 @@ ZoteroOCR = {
             let imageList = PathUtils.join(dir, 'image-list.txt');
             if (!(await IOUtils.exists(imageList))) {
                 try {
-                    Zotero.debug("Running " + pdftoppm + ' -png -r 300 ' + pdf + ' ' + dir + '/page');
-                    await Zotero.Utilities.Internal.exec(pdftoppm, ['-progress', '-png', '-r', 300, pdf, dir + '/page']);
+                    let pdftoppmCmdArgs = ['-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                    Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
+                    await Zotero.Utilities.Internal.exec(pdftoppm, pdftoppmCmdArgs);
                 }
                 catch (e) {
                     Zotero.logError(e);
@@ -223,6 +223,8 @@ ZoteroOCR = {
 
             let parameters = [dir + '/image-list.txt'];
             parameters.push(ocrbase);
+            parameters.push('--psm');
+            parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
             if (Zotero.Prefs.get("zoteroocr.language")) {
                 parameters.push('-l');
                 parameters.push(Zotero.Prefs.get("zoteroocr.language"));
@@ -271,26 +273,41 @@ ZoteroOCR = {
                 for (let i = 1; i < upperLimit; i++) {
                     let pagename = 'page-' + i + '.html';
                     let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
-                    let pagecontent = preamble + "<div class='ocr_page'" + parts[i] +   '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
+                    let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                     Zotero.File.putContents(htmlfile, pagecontent);
-                    // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() did not
-                    await Zotero.Attachments.importFromFile({
-                        file: PathUtils.join(dir, pagename),
-                        contentType: "text/html",
-                        parentItemID: item.id,
-                        libraryID: item.libraryID
-                    });
+                    // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                    if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+                        await Zotero.Attachments.importFromFile({
+                            file: PathUtils.join(dir, pagename),
+                            contentType: "text/html",
+                            libraryID: item.libraryID,
+                            parentItemID: item.id,
+                        });
+                    } else {
+                        await Zotero.Attachments.linkFromFile({
+                            file: PathUtils.join(dir, pagename),
+                            contentType: "text/html",
+                            parentItemID: item.id
+                        });
+                    }
                 }
             }
 
             // attach PDF if it is a new one
             if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-                // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() did not
-                await Zotero.Attachments.importFromFile({
-                    file: ocrbase + '.pdf',
-                    parentItemID: item.id,
-                    libraryID: item.libraryID 
-                });
+                // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+                    await Zotero.Attachments.importFromFile({
+                        file: ocrbase + '.pdf',
+                        libraryID: item.libraryID,
+                        parentItemID: item.id,
+                    });
+                } else {
+                    await Zotero.Attachments.linkFromFile({
+                        file: ocrbase + '.pdf',
+                        parentItemID: item.id
+                    });
+                }
             }
 
             if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {

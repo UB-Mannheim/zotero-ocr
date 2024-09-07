@@ -5,7 +5,8 @@
 [![License](https://img.shields.io/github/license/UB-Mannheim/zotero-ocr)](https://github.com/UB-Mannheim/zotero-ocr/blob/master/LICENSE)
 ![Downloads latest release](https://img.shields.io/github/downloads/UB-Mannheim/zotero-ocr/latest/total?color=yellow)
 
-This Zotero plugin adds the functionality to perform an OCR for the PDFs selected in Zotero. It can add a new PDF including the recognized text, a note with the recognized text only, and HTML (HOCR) file(s).
+This Zotero plugin adds the functionality to perform an OCR for the PDFs selected in Zotero.
+It can add a new PDF including the recognized text, a note with the recognized text only, and HTML (hOCR) file(s).
 Tesseract OCR is used for the text recognition itself.
 
 

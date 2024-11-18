@@ -225,10 +225,16 @@ ZoteroOCR = {
             parameters.push(ocrbase);
             parameters.push('--psm');
             parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
-            if (Zotero.Prefs.get("zoteroocr.language")) {
-                parameters.push('-l');
-                parameters.push(Zotero.Prefs.get("zoteroocr.language"));
+            
+            let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
+            // Convert existing instances with older or buggy defaults to English OCR
+            if (!ocrLanguage || ocrLanguage === 'undefined') {
+                ocrLanguage = 'eng';
+                Zotero.Prefs.set("zoteroocr.language", ocrLanguage);
             }
+            parameters.push('-l');
+            parameters.push(ocrLanguage);
+
             parameters.push('txt');
             if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
                 parameters.push('pdf');

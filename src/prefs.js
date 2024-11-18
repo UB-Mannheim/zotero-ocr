@@ -1,3 +1,5 @@
+pref("extensions.zotero.zoteroocr.language", "eng")
+pref("extensions.zotero.zoteroocr.outputNote", true);
 pref("extensions.zotero.zoteroocr.outputNote", true);
 pref("extensions.zotero.zoteroocr.outputPDF", true);
 pref("extensions.zotero.zoteroocr.overwritePDF", false);

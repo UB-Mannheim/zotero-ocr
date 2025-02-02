@@ -15,8 +15,10 @@ Tesseract OCR is used for the text recognition itself.
 - Tesseract OCR is installed
   - for Windows see https://github.com/UB-Mannheim/tesseract/wiki
   - for Linux, Mac see https://tesseract-ocr.github.io/tessdoc/Installation.html
-- `pdftoppm` from poppler library is downloaded and installed
+- `pdftoppm` from the Poppler tools is installed
   - some hints for the installation: https://github.com/UB-Mannheim/zotero-ocr/wiki/Install-pdftoppm
+
+Zotero must be installed using one of the officially supported methods https://www.zotero.org/support/installation#how_do_i_install_zotero. Flatpak/Snap/Appimage and similar set-ups are not supported: Zotero-OCR will not work with them in general, as such architectures prevent it from accessing the tesseract and pdftoppm tools. Skilled users might get them to work on their own machines but we cannot help with that.
 
 
 ## Installation

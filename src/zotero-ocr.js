@@ -116,7 +116,7 @@ ZoteroOCR = {
             If the last possible option doesn't exist, display an error message and quit.
         */
 
-        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt_fake/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
         let pdftoppm = await checkExternalCmd("pdttoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(await IOUtils.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);

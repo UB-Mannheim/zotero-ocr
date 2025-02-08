@@ -24,45 +24,60 @@ Zotero.OCR = new function() {
 
 	this.recognize = Zotero.Promise.coroutine(function* () {
 
-		// Look for the tesseract executable in the settings and at commonly used locations.
-		// If it is found, the settings are updated.
-		// Otherwise abort with an alert.
-		let ocrEngine = Zotero.Prefs.get("zoteroocr.ocrPath");
-		let found = false;
-		if (ocrEngine) {
-			let pathOrFile = FileUtils.File(ocrEngine);
-			// If a directory is given, then try for the standard name of the tool.
-			if (pathOrFile.isDirectory()) {
-				if (Zotero.isWin) {
-					ocrEngine = OS.Path.join(ocrEngine, "tesseract.exe");
-				}
-				else {
-					ocrEngine = OS.Path.join(ocrEngine, "tesseract");
-				}
-				Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
-			}
-			found = yield OS.File.exists(ocrEngine);
-		}
-		else {
-			let path = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
-			for (ocrEngine of path) {
-				ocrEngine += "tesseract";
-				if (Zotero.isWin) {
-					ocrEngine += ".exe";
-				}
-				if (yield OS.File.exists(ocrEngine)) {
-					found = true;
-					Zotero.debug("Found " + ocrEngine);
-					Zotero.Prefs.set("zoteroocr.ocrPath", ocrEngine);
-					break;
-				}
-				Zotero.debug("No " + ocrEngine);
-			}
-		}
-		if (!found) {
-			alert("Tesseract executable not found. Tried: " + ocrEngine);
-			return;
-		}
+		let checkExternalCmd = Zotero.Promise.coroutine(function* (exeName, exePref, possiblePath) {
+            // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
+            // If it is found, the settings are updated.
+            // Otherwise the last possible location is returned.
+            let externalCmd = Zotero.Prefs.get(exePref);
+            let externalCmdFound = false;
+            if (!externalCmd) {
+                // look for externalCmd in various possible directories
+                for (externalCmd of possiblePath) {
+                    Zotero.debug("will try to locate " + externalCmd);
+                    externalCmd += exeName;
+                    if (Zotero.isWin) {
+                        externalCmd += ".exe";
+                    }
+                    try {
+                        externalCmdFound = yield OS.File.exists(externalCmd);
+                    } catch(e) {
+                        // if checking one of the possible paths throws an error, definitely count as not found
+                        externalCmdFound = false;
+                    }
+                    
+                    if (externalCmdFound) {
+                        // found = true;
+                        Zotero.debug("Found " + externalCmd);
+                        Zotero.Prefs.set(exePref, externalCmd);
+                        break;
+                    }
+                    Zotero.debug("No " + externalCmd);
+                }
+            }
+            if (Zotero.isWin && !(externalCmd.endsWith(".exe"))) {
+                externalCmd = externalCmd + ".exe";
+            }
+            return externalCmd;
+        })
+    
+        /*
+            Check the settings and alternative possible locations for pdftoppm and tesseract.
+            If the last possible option doesn't exist, display an error message and quit.
+        */
+
+        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let pdftoppm = yield checkExternalCmd("pdttoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+        if (!(yield OS.File.exists(pdftoppm))) {
+            window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+            return;
+        }
+
+        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let ocrEngine = yield checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
+        if (!(yield OS.File.exists(ocrEngine))) {
+            window.alert("No tesseract executable found, last check: " + ocrEngine);
+            return;
+        }
 
 		// Use the special pdfinfo variant in the zotero directory (which comes along Zotero)
 		// See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
@@ -76,22 +91,6 @@ Zotero.OCR = new function() {
 		}
 		if (!(yield OS.File.exists(pdfinfo))) {
 			alert("No " + pdfinfo + " executable found.");
-			return;
-		}
-
-		// Look for a specific path in the preferences for pdftoppm
-		let pdftoppm = Zotero.Prefs.get("zoteroocr.pdftoppmPath");
-		if (!pdftoppm) {
-			// alternatively use the also the Zotero directory to look for pdftoppm
-			pdftoppm = zdir.clone();
-			pdftoppm.append("pdftoppm");
-			pdftoppm = pdftoppm.path;
-		}
-		if (Zotero.isWin && !(pdftoppm.endsWith(".exe"))) {
-			pdftoppm = pdftoppm + ".exe";
-		}
-		if (!(yield OS.File.exists(pdftoppm))) {
-			alert("No " + pdftoppm + " executable found.");
 			return;
 		}
 
@@ -166,14 +165,13 @@ Zotero.OCR = new function() {
 			parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
 			
 			let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
-			// Convert existing instances with older or buggy defaults to eng
+			// Convert existing instances with older or buggy defaults to English
             if (!ocrLanguage || ocrLanguage === 'undefined') {
                 ocrLanguage = 'eng';
                 Zotero.Prefs.set("zoteroocr.language", ocrLanguage);
             }
             parameters.push('-l');
             parameters.push(ocrLanguage);
-
 			parameters.push('txt');
 			if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
 				parameters.push('pdf');

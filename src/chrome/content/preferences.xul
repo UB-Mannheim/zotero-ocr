@@ -65,7 +65,7 @@
               <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
               <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" width="20"/>
             </hbox>
-            <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate PNGs as well in the folder"/>
+            <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate images as well in the folder"/>
             <checkbox preference="pref-zoteroocr-output-as-copy-attachment" label="Import the resulting PDF as a copy instead of as a file link"/>
         </groupbox>
     </prefpane>

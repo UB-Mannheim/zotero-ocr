@@ -136,7 +136,7 @@ Zotero.OCR = new function() {
 			// build the pdftoppm arguments based on hidden preferences:
             // => will produce a PDF output with reasonable size and image quality
             // File format: JPEG by default instead of PNG
-            // JPEG quaility 70/100 (pdftoppm default is 75)
+            // JPEG quality 70/100 (pdftoppm default is 75)
             // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
             // Use progressive JPEF: yes (pdftoppm default is no)
             let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");

@@ -176,7 +176,7 @@ ZoteroOCR = {
             // File format: JPEG by default instead of PNG
             // JPEG quality 70/100 (pdftoppm default is 75)
             // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
-            // Use progressive JPEF: yes (pdftoppm default is no)
+            // Use progressive JPEG: yes (pdftoppm default is no)
             let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
             let pdftoppmCmdArgs;
             if (imageFormat == "jpg" || imageFormat == "jpeg") {

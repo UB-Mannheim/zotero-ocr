@@ -173,7 +173,11 @@ Zotero.OCR = new function() {
 				var imageListArray = [];
 				for (let i = 1; i <= parseInt(numPages, 10); i++) {
 					let paddedIndex = "0".repeat(numPages.length) + i;
-					imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
+					if (imageFormat == "jpg") {
+						imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.jpg');
+					} else {
+						imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
+					}
 				}
 				Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
 			}

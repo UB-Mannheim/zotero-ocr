@@ -133,6 +133,26 @@ Zotero.OCR = new function() {
 			let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
 			// TODO filter out PDFs which have already a text layer
 
+			// build the pdftoppm arguments based on hidden preferences:
+            // => will produce a PDF output with reasonable size and image quality
+            // File format: JPEG by default instead of PNG
+            // JPEG quality 70/100 (pdftoppm default is 75)
+            // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
+            // Use progressive JPEG: yes (pdftoppm default is no)
+            let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
+            let pdftoppmCmdArgs;
+            if (imageFormat == "jpg" || imageFormat == "jpeg") {
+                imageFormat = "jpg";
+                let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
+                let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
+                let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
+                pdftoppmCmdArgs = ['-jpeg', '-jpegopt', 'quality='+jpegQuality+',progressive='+jpegProgressive+',optimize='+jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+
+            } else {
+                imageFormat = "png";
+                pdftoppmCmdArgs = ['-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+            }
+
 			// extract images from PDF
 			let imageList = OS.Path.join(dir, 'image-list.txt');
 			if (!(yield OS.File.exists(imageList))) {
@@ -141,7 +161,6 @@ Zotero.OCR = new function() {
 					Zotero.debug("Running " + pdfinfo + ' ' + pdfinfoCmdArgs.join(' '));
 					yield Zotero.Utilities.Internal.exec(pdfinfo, pdfinfoCmdArgs);
 
-					let pdftoppmCmdArgs = ['-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
 					Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
 					yield Zotero.Utilities.Internal.exec(pdftoppm, pdftoppmCmdArgs);
 				}
@@ -154,7 +173,11 @@ Zotero.OCR = new function() {
 				var imageListArray = [];
 				for (let i = 1; i <= parseInt(numPages, 10); i++) {
 					let paddedIndex = "0".repeat(numPages.length) + i;
-					imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
+					if (imageFormat == "jpg") {
+						imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.jpg');
+					} else {
+						imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
+					}
 				}
 				Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
 			}

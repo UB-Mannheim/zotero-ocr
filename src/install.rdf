@@ -6,7 +6,7 @@
         RDF:about="urn:mozilla:install-manifest"
         em:id="zotero-ocr@bib.uni-mannheim.de"
         em:name="Zotero OCR"
-        em:version="0.8.1"
+        em:version="0.9.0"
         em:iconURL="chrome://zoteroocr/skin/ubmannheim.png"
         em:icon64URL="chrome://zoteroocr/skin/ubmannheim64x64.png"
         em:creator="Philipp Zumstein"

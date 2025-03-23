@@ -50,9 +50,9 @@ By default the fields for the paths to the OCR engine and pdftoppm are empty, wh
 The default language/script to use with Tesseract, can only be one of the installed models. If you leave that field empty, then the English model (eng) will be used, which is always installed with Tesseract.
 
 The user may:
-- modify the output DPI (by default: 300)
-- modify the Tesseract Page Segmentation Mode (PSM). There are many PSM options one may want to utilize when running Tesseract (see https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html)
-- choose to add the new PDFs as normal attachments or as linked files. Starting with Zotero-OCR 0.8.0, the default is normal attachments, due to some drawbacks with linked files (not possible in group libraries, unwanted files remaining when a user moves attachments to the Trash...).
+* modify the output DPI (by default: 300)
+* modify the Tesseract Page Segmentation Mode (PSM). There are many PSM options one may want to utilize when running Tesseract (see https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html)
+* choose to add the new PDFs as normal attachments or as linked files. Starting with Zotero-OCR 0.8.0, the default is normal attachments, due to some drawbacks with linked files (not possible in group libraries, unwanted files remaining when a user moves attachments to the Trash...).
 
 
 ![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)
@@ -60,7 +60,29 @@ The user may:
 Moreover, these options are saved as Zotero preferences variables, which are also available through the [Config Editor](https://www.zotero.org/support/preferences/advanced).
 
 
+## Zotero OCR for beginners
+
+You can start Zotero OCR using the context menu for your PDF in Zotero:
+
+![Start the plugin](./screenshots/pdfselection.png)
+
+The plugin will take some to process your PDF (one single page can take several seconds), be patient. If your PDF didn't have a parent item (https://www.zotero.org/support/kb/library_items), Zotero OCR will immeditately create one to ensure that its output file will be clearly associated with your PDF. The parent item is where you can enter proper metadata for your PDF, which will facilitate proper Zotero citations if you need them.
+
+After processing, Zotero OCR will attach its output files to the parent item. Using the default settings, you will obtain:
+* HTML attachments for the first 5 pages of the PDF (listed as page-1, page-2, etc.). This is mostly useful to verify that tesseract has been executed properly.
+* A copy of your original PDF with `.ocr` added to the name. This is the final output.
+
+
+![It worked!](./screenshots/after-ocr.png)
+
+The defaut Zotero OCR settings are intended to facilitate troubleshooting, and you might prefer to save some space. When you feel confident that everything is working, you may change your Zotero OCR settings to produce fewer intermediate files and attachments:
+* HTML/hocr files and intermediate images can be unselected without any risk.
+* Overwriting the initial PDF with the output can be convenient, in particular it will usually ensure that the attachment with a text layer will be the main one for your Zotero reference. However, you might lose your PDF if something goes wrong (possible, even if unlikely) - caution is advised.
+
+
 ## Development, build and release
+
+Regular users do not need to read this section.
 
 After any code changes one can build a new extension file by `./build.sh <version>`.
 Then in Zotero install the newly created `.xpi`-file. as described in the Installation section.

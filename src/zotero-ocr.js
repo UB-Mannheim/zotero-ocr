@@ -297,6 +297,7 @@ ZoteroOCR = {
                             libraryID: item.libraryID,
                             parentItemID: item.id,
                         });
+                        await Zotero.File.removeIfExists(PathUtils.join(dir, pagename));
                     } else {
                         await Zotero.Attachments.linkFromFile({
                             file: PathUtils.join(dir, pagename),
@@ -316,6 +317,7 @@ ZoteroOCR = {
                         libraryID: item.libraryID,
                         parentItemID: item.id,
                     });
+                    await Zotero.File.removeIfExists(ocrbase + '.pdf');
                 } else {
                     await Zotero.Attachments.linkFromFile({
                         file: ocrbase + '.pdf',

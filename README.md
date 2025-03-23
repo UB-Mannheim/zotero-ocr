@@ -25,17 +25,27 @@ Zotero must be installed using one of the officially supported methods https://w
 
 To install the extension:
 
-* Download the XPI file of the [latest release](https://github.com/UB-Mannheim/zotero-ocr/releases).
+1. Download the XPI file of the [latest release](https://github.com/UB-Mannheim/zotero-ocr/releases).
+2. Install the XPI depending on your Zotero version:
+
+#### Zotero 7 users
+* In Zotero, go to Tools → Plugins and drag the .xpi onto the Plugins Manager window.
+* Possibly, adjust the paths to Tesseract and pdftoppm in the Zotero OCR section of the Zotero settings.
+
+#### Zotero 6 users
+
 * In Zotero, go to Tools → Add-ons and drag the .xpi onto the Add-ons window.
-* Possibly, adjust the path to Tesseract in the add-on options.
+* Possibly, adjust the paths to Tesseract and pdftoppm in the add-on options.
+* Restart Zotero to activate Zotero OCR.
+
+Zotero 7 was officially released in August 2024, with important changes over Zotero 6. Support for version 6 will stop at some point in the near future, please consider upgrading.
 
 
 ## Configuration
 
-The configuration can be accessed under Tools → Zotero OCR Preferences (Zotero 6)
-or under Zotero → Settings (Zotero 7).
+The configuration can be accessed under under Zotero → Settings (Zotero 7) or Tools → Zotero OCR Preferences (Zotero 6).
 
-By default the fields for the paths to the OCR engine and pdftoppm are empty, which means, that the usual locations are looked at. If that does not work, then you should locate the tools on your local machine and enter the full paths including the name of the tools itself.
+By default the fields for the paths to the OCR engine and pdftoppm are empty, which means that the usual locations are looked at. If that does not work, then you should locate the tools on your local machine and enter the full paths including the name of the tools itself.
 
 The default language/script to use with Tesseract, can only be one of the installed models. If you leave that field empty, then the English model (eng) will be used, which is always installed with Tesseract.
 
@@ -50,25 +60,17 @@ The user may:
 Moreover, these options are saved as Zotero preferences variables, which are also available through the [Config Editor](https://www.zotero.org/support/preferences/advanced).
 
 
-## Build and release
+## Development, build and release
 
-Run `build.sh` script, which creates a new `.xpi` file.
+After any code changes one can build a new extension file by `./build.sh <version>`.
+Then in Zotero install the newly created `.xpi`-file. as described in the Installation section.
+
+If any error occurs then you will see more details in the `Help`, `Report Error...` dialog. For some debugging messages you can activate in Zotero the debugging in the `Help`, `Debug Output Logging`.
 
 For a new release, run the script `release.sh`.
 It runs the `build.sh` script, commits the code changes for the new release and adds a tag.
 Push the updated local master branch and the tag to GitHub.
 Then publish a [new release on GitHub](https://github.com/UB-Mannheim/zotero-ocr/releases/new) and attach the `.xpi` file there.
-
-
-## Development
-
-After any code changes one can build a new extension file by `./build.sh <version>`.
-Then in Zotero go to `Tools`, `Add-ons`, `Install Add-on From File...`
-and choose there the newly created `.xpi`-file.
-Zotero 6 will restart with the newly built add-on version.
-Zotero 7 does not require a restart and will activate it immediately.
-
-If any error occurs then you will see more details in the `Help`, `Report Error...` dialog. For some debugging messages you can activate in Zotero the debugging in the `Help`, `Debug Output Logging`.
 
 
 ## License

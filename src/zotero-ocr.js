@@ -17,7 +17,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
     progressWindow.show();
     
     // Create a determined progress bar after showing the window
-    const icon = "chrome://zotero/skin/toolbar-item.png";
+    const icon = "chrome://zotero/skin/attachment-pdf.svg";
     const progressBar = new progressWindow.ItemProgress(icon, message);
     
     // Set initial progress
@@ -339,10 +339,6 @@ ZoteroOCR = {
             try {
                 progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-                //simulateProgress(Zotero.Utilities.Internal.exec(ocrEngine, parameters), percent => {
-                //    progress.updateMessage(`Progress: ${percent}%`);
-                //});
-                // await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
                 await runOCRWithTimer(ocrEngine, parameters, progress);
                 
             }

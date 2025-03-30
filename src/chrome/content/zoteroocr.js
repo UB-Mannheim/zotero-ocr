@@ -10,7 +10,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
     const progressWindow = new Zotero.ProgressWindow();
     
     // Set the headline/title
-    progressWindow.changeHeadline("Progress");
+    progressWindow.changeHeadline("Zotero OCR");
     
     // Show the window first before adding items
     progressWindow.show();
@@ -65,39 +65,6 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
   }
 }
 
-// Fallback to a simpler progress window if needed
-function createSimpleProgressWindow(message) {
-  try {
-    const progressWindow = new Zotero.ProgressWindow();
-    progressWindow.changeHeadline("Progress");
-    progressWindow.addDescription(message);
-    progressWindow.show();
-    
-    return {
-      updateMessage: (newMessage) => {
-        try {
-          progressWindow.addDescription(newMessage, true); // true = replace existing
-        } catch (e) {
-          console.error("Error updating message:", e);
-        }
-      },
-      close: () => {
-        try {
-          progressWindow.close();
-        } catch (e) {
-          console.error("Error closing progress window:", e);
-        }
-      }
-    };
-  } catch (e) {
-    console.error("Error creating simple progress window:", e);
-    return {
-      updateMessage: () => {},
-      close: () => {}
-    };
-  }
-}
-
 Zotero.OCR = new function() {
 
 	this.openPreferenceWindow = function(paneID, action) {
@@ -117,6 +84,8 @@ Zotero.OCR = new function() {
 	};
 
 	this.recognize = Zotero.Promise.coroutine(function* () {
+
+		const progress = createZoteroProgressWindow("Initializing...", 0);
 
 		let checkExternalCmd = Zotero.Promise.coroutine(function* (exeName, exePref, possiblePath) {
             // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
@@ -153,6 +122,32 @@ Zotero.OCR = new function() {
             }
             return externalCmd;
         })
+
+
+        let runOCRWithTimer = Zotero.Promise.coroutine(function* (ocrEngine, parameters, progress) {
+		    let seconds = 0;
+
+		    // Log initial message
+		    progress.updateMessage("Starting OCR process...");
+
+		    // Start a timer that logs progress
+		    const timer = setInterval(() => {
+		        seconds++;
+		        progress.updateMessage(`OCR running... ${seconds}s elapsed`);
+		    }, 1000);
+
+		    try {
+		        yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+		        progress.updateMessage(`OCR completed in ${seconds}s`);
+		        return "Done";
+		    } catch (e) {
+		        progress.updateMessage(`OCR failed after ${seconds}s`);
+		        throw e;
+		    } finally {
+		        clearInterval(timer);
+		    }
+		});
+
     
         /*
             Check the settings and alternative possible locations for pdftoppm and tesseract.
@@ -298,11 +293,14 @@ Zotero.OCR = new function() {
 			}
 			try {
 				Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-				yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+				// yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+				yield runOCRWithTimer(ocrEngine, parameters, progress);
 			}
 			catch (e) {
 				Zotero.logError(e);
 			}
+
+			progress.updateMessage("OCR completed: attaching output");
 
 			if (Zotero.Prefs.get("zoteroocr.outputNote")) {
 				let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
@@ -343,6 +341,7 @@ Zotero.OCR = new function() {
 							libraryID: item.libraryID,
 							parentItemID: item.id,
 						});
+						yield Zotero.File.removeIfExists(OS.Path.join(dir, pagename));
 					} else {
 						yield Zotero.Attachments.linkFromFile({
 							file: OS.Path.join(dir, pagename),
@@ -362,6 +361,7 @@ Zotero.OCR = new function() {
 						libraryID: item.libraryID,
 						parentItemID: item.id,
 					});
+					yield Zotero.File.removeIfExists(ocrbase + '.pdf');
 				} else {
 					yield Zotero.Attachments.linkFromFile({
 						file: ocrbase + '.pdf',
@@ -379,6 +379,6 @@ Zotero.OCR = new function() {
 				}
 			}
 		}
+		progress.close();
 	});
-
 };

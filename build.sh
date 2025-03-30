@@ -6,4 +6,4 @@ if [ -z "$version" ]; then
 fi
 
 mkdir -p build
-(cd src && zip -DX -r ../build/zotero-ocr-${version}.xpi * -x ".*")
+(cd src && zip -DX -r ../build/zotero-ocr-${version}.xpi * -x "**/.*")

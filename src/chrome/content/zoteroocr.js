@@ -4,6 +4,100 @@
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Components.utils.import("resource://gre/modules/osfile.jsm");
 
+function createZoteroProgressWindow(message, initialProgress = 0) {
+  try {
+    // Create a progress window using Zotero's API
+    const progressWindow = new Zotero.ProgressWindow();
+    
+    // Set the headline/title
+    progressWindow.changeHeadline("Progress");
+    
+    // Show the window first before adding items
+    progressWindow.show();
+    
+    // Create a determined progress bar after showing the window
+    const icon = "chrome://zotero/skin/toolbar-item.png";
+    const progressBar = new progressWindow.ItemProgress(icon, message);
+    
+    // Set initial progress
+    if (initialProgress > 0) {
+      try {
+        progressBar.setProgress(initialProgress);
+      } catch (e) {
+        console.error("Error setting initial progress:", e);
+      }
+    }
+    
+    return {
+      updateProgress: (progress) => {
+        try {
+          const validProgress = Math.min(100, Math.max(0, progress));
+          progressBar.setProgress(validProgress);
+          return validProgress === 100;
+        } catch (e) {
+          console.error("Error updating progress:", e);
+          return false;
+        }
+      },
+      updateMessage: (newMessage) => {
+        try {
+          progressBar.setText(newMessage);
+        } catch (e) {
+          console.error("Error updating message:", e);
+        }
+      },
+      close: () => {
+        try {
+          progressWindow.close();
+        } catch (e) {
+          console.error("Error closing progress window:", e);
+        }
+      }
+    };
+  } catch (e) {
+    console.error("Error creating progress window:", e);
+    // Return dummy functions in case of failure
+    return {
+      updateProgress: () => false,
+      updateMessage: () => {},
+      close: () => {}
+    };
+  }
+}
+
+// Fallback to a simpler progress window if needed
+function createSimpleProgressWindow(message) {
+  try {
+    const progressWindow = new Zotero.ProgressWindow();
+    progressWindow.changeHeadline("Progress");
+    progressWindow.addDescription(message);
+    progressWindow.show();
+    
+    return {
+      updateMessage: (newMessage) => {
+        try {
+          progressWindow.addDescription(newMessage, true); // true = replace existing
+        } catch (e) {
+          console.error("Error updating message:", e);
+        }
+      },
+      close: () => {
+        try {
+          progressWindow.close();
+        } catch (e) {
+          console.error("Error closing progress window:", e);
+        }
+      }
+    };
+  } catch (e) {
+    console.error("Error creating simple progress window:", e);
+    return {
+      updateMessage: () => {},
+      close: () => {}
+    };
+  }
+}
+
 Zotero.OCR = new function() {
 
 	this.openPreferenceWindow = function(paneID, action) {

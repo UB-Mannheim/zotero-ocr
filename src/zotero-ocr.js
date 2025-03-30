@@ -62,6 +62,30 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
   }
 }
 
+async function runOCRWithTimer(ocrEngine, parameters, progress) {
+    let seconds = 0;
+
+    // Log initial message
+    progress.updateMessage("Starting OCR process...");
+
+    // Start a timer that logs progress
+    const timer = setInterval(() => {
+        seconds++;
+        progress.updateMessage(`OCR running... ${seconds}s elapsed`);
+    }, 1000);
+
+    try {
+        const result = await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+        progress.updateMessage(`OCR completed in ${seconds}s`);
+        return result;
+    } catch (e) {
+        progress.updateMessage(`OCR failed after ${seconds}s`);
+        throw e;
+    } finally {
+        clearInterval(timer);
+    }
+}
+
 ZoteroOCR = {
     id: null,
     version: null,
@@ -315,7 +339,12 @@ ZoteroOCR = {
             try {
                 progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-                await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+                //simulateProgress(Zotero.Utilities.Internal.exec(ocrEngine, parameters), percent => {
+                //    progress.updateMessage(`Progress: ${percent}%`);
+                //});
+                // await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
+                await runOCRWithTimer(ocrEngine, parameters, progress);
+                
             }
             catch (e) {
                 Zotero.logError(e);

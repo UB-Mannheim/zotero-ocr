@@ -155,7 +155,7 @@ Zotero.OCR = new function() {
         */
 
         let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
-        let pdftoppm = yield checkExternalCmd("pdttoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+        let pdftoppm = yield checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(yield OS.File.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);
             return;

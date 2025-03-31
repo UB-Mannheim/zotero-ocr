@@ -1,6 +1,6 @@
 // zotero-ocr.js
 
-// Formerly documented by https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
+	// Formerly documented by https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
@@ -9,22 +9,22 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
     const progressWindow = new Zotero.ProgressWindow({
       closeOnClick: false
     });
-    
+
     // Set the headline/title
     progressWindow.changeHeadline("Zotero OCR");
-    
+
     // Show the window first before adding items
     progressWindow.show();
-    
+
     // Create a determined progress bar after showing the window
     const icon = "chrome://zotero/skin/attachment-pdf.svg";
     const progressBar = new progressWindow.ItemProgress(icon, message);
-    
+
     // Set initial progress
     if (initialProgress > 0) {
       progressBar.setProgress(initialProgress);
     }
-    
+
     return {
       updateProgress: (progress) => {
         try {
@@ -180,7 +180,7 @@ ZoteroOCR = {
                         // if checking one of the possible paths throws an error, definitely count as not found
                         externalCmdFound = false;
                     }
-                    
+
                     if (externalCmdFound) {
                         // found = true;
                         Zotero.debug("Found " + externalCmd);
@@ -195,7 +195,7 @@ ZoteroOCR = {
             }
             return externalCmd;
         }
-    
+
         /*
             Check the settings and alternative possible locations for pdftoppm and tesseract.
             If the last possible option doesn't exist, display an error message and quit.
@@ -214,7 +214,7 @@ ZoteroOCR = {
             window.alert("No tesseract executable found, last check: " + ocrEngine);
             return;
         }
-        
+
         // Proceed with the actual selected items, process if the item is a PDF.
 
         let items = Zotero.getActiveZoteroPane().getSelectedItems();
@@ -228,7 +228,7 @@ ZoteroOCR = {
                     // => create an empty parent item to keep things tidy
                     if (pdfItem.isTopLevelItem()) {
                         await Zotero.getActiveZoteroPane().createEmptyParent(pdfItem);
-                    } 
+                    }
                     item = Zotero.Items.get(item.parentItemID);
                 }
                 else {
@@ -289,7 +289,7 @@ ZoteroOCR = {
                 }
 
                 var imageListArray = [];
-                
+
                 await IOUtils.getChildren(dir).then(
                     (entries) => {
                         for (const entry of entries) {
@@ -319,7 +319,7 @@ ZoteroOCR = {
             parameters.push(ocrbase);
             parameters.push('--psm');
             parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
-            
+
             let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
             // Convert existing instances with older or buggy defaults to English OCR
             if (!ocrLanguage || ocrLanguage === 'undefined') {
@@ -340,7 +340,7 @@ ZoteroOCR = {
                 progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
                 await runOCRWithTimer(ocrEngine, parameters, progress);
-                
+
             }
             catch (e) {
                 Zotero.logError(e);

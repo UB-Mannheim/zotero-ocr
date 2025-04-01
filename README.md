@@ -84,7 +84,8 @@ The defaut Zotero OCR settings are intended to facilitate troubleshooting, and y
 
 Regular users do not need to read this section.
 
-After any code changes one can build a new extension file by `./build.sh <version>`.
+Developers can build a new extension file by running `./build.sh [VERSION]`.
+It will ask for a version if no version was given on the command line.
 Then in Zotero install the newly created `.xpi`-file. as described in the Installation section.
 
 If any error occurs then you will see more details in the `Help`, `Report Error...` dialog. For some debugging messages you can activate in Zotero the debugging in the `Help`, `Debug Output Logging`.

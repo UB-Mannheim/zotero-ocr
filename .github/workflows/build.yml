@@ -24,7 +24,7 @@ jobs:
         run: git config --global user.email "ci@example.com" && git config --global user.name "GitHub CI"
 
       - name: Run build
-        run: ./release.sh $(git describe --tags || echo ci-test) && cp -a build/*.xpi .
+        run: ./release.sh $(git describe --tags || echo ci-test)-$(date -I) && cp -a build/*.xpi .
 
       - uses: actions/upload-artifact@v4
         with:

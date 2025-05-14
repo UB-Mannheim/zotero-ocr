@@ -117,7 +117,7 @@ ZoteroOCR = {
         */
 
         let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
-        let pdftoppm = await checkExternalCmd("pdtfoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+        let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(await IOUtils.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);
             return;

@@ -116,14 +116,14 @@ ZoteroOCR = {
             If the last possible option doesn't exist, display an error message and quit.
         */
 
-        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
         let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(await IOUtils.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);
             return;
         }
 
-        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
         let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
         if (!(await IOUtils.exists(ocrEngine))) {
             window.alert("No tesseract executable found, last check: " + ocrEngine);

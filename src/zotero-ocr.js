@@ -1,7 +1,11 @@
 // zoteroocr.js
 
 // Formerly documented by https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
-Components.utils.import("resource://gre/modules/FileUtils.jsm");
+if (Zotero.version >= "8") {
+    ChromeUtils.importESModule("resource://gre/modules/FileUtils.sys.mjs");
+} else {
+    Components.utils.import("resource://gre/modules/FileUtils.jsm");
+}
 
 ZoteroOCR = {
     id: null,

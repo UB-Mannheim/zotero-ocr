@@ -269,9 +269,9 @@ ZoteroOCR = {
 						arguments: pdftoppmCmdArgs,
 					})
 					let string;
-while ((string = await proc.stdout.readString())) {
+					while ((string = await proc.stdout.readString())) {
 						Zotero.debug("line: " + string)
-}
+					}
 
                 }
                 catch (e) {
@@ -338,14 +338,14 @@ while ((string = await proc.stdout.readString())) {
 					arguments: parameters,
 						stderr: "stdout"
 				})
-const regex = /Page (\d+) :/;
+				const regex = /Page (\d+) :/;
 				let string;
-					while ((string = await proc.stdout.readString())) {
+				while ((string = await proc.stdout.readString())) {
 						Zotero.debug("output" + string)
 						const res = string.match(regex)
 						if(res) {
 							progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
-						Zotero.debug("page: " +  res[1])
+							Zotero.debug("page: " +  res[1])
 						}
 }
             }

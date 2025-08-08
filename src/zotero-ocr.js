@@ -2,6 +2,9 @@
 
 	// Formerly documented by https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.defineESModuleGetters(globalThis, {
+	Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
+});
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
   try {
@@ -62,29 +65,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
   }
 }
 
-async function runOCRWithTimer(ocrEngine, parameters, progress) {
-    let seconds = 0;
 
-    // Log initial message
-    progress.updateMessage("Starting OCR process...");
-
-    // Start a timer that logs progress
-    const timer = setInterval(() => {
-        seconds++;
-        progress.updateMessage(`OCR running... ${seconds}s elapsed`);
-    }, 1000);
-
-    try {
-        const result = await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
-        progress.updateMessage(`OCR completed in ${seconds}s`);
-        return result;
-    } catch (e) {
-        progress.updateMessage(`OCR failed after ${seconds}s`);
-        throw e;
-    } finally {
-        clearInterval(timer);
-    }
-}
 
 ZoteroOCR = {
     id: null,
@@ -279,10 +260,19 @@ ZoteroOCR = {
             progress.updateMessage("Extracting pages...");
             // extract images from PDF
             let imageList = PathUtils.join(dir, 'image-list.txt');
+			let pageCount;
             if (!(await IOUtils.exists(imageList))) {
                 try {
                     Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-                    await Zotero.Utilities.Internal.exec(pdftoppm, pdftoppmCmdArgs);
+					let proc = await Subprocess.call({
+						command: pdftoppm,
+						arguments: pdftoppmCmdArgs,
+					})
+					let string;
+while ((string = await proc.stdout.readString())) {
+						Zotero.debug("line: " + string)
+}
+
                 }
                 catch (e) {
                     Zotero.logError(e);
@@ -308,6 +298,7 @@ ZoteroOCR = {
                         Zotero.debug(imageListArray);
                         // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
                         imageListArray.sort();
+						pageCount = imageListArray.length;
 
                         // save the list of images in a separate file
                         Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
@@ -317,6 +308,7 @@ ZoteroOCR = {
 
             let parameters = [dir + '/image-list.txt'];
             parameters.push(ocrbase);
+
             parameters.push('--psm');
             parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
 
@@ -339,8 +331,22 @@ ZoteroOCR = {
             try {
                 progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-                await runOCRWithTimer(ocrEngine, parameters, progress);
 
+
+				let proc = await Subprocess.call({
+					command: ocrEngine,
+					arguments: parameters,
+						stderr: "stdout"
+				})
+const regex = /Page (\d+) :/;
+				let string;
+					while ((string = await proc.stdout.readString())) {
+						Zotero.debug("output" + string)
+						const res = string.match(regex)
+						if(res)
+							progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
+						Zotero.debug("page: " +  res[1])
+}
             }
             catch (e) {
                 Zotero.logError(e);

@@ -343,9 +343,10 @@ const regex = /Page (\d+) :/;
 					while ((string = await proc.stdout.readString())) {
 						Zotero.debug("output" + string)
 						const res = string.match(regex)
-						if(res)
+						if(res) {
 							progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
 						Zotero.debug("page: " +  res[1])
+						}
 }
             }
             catch (e) {

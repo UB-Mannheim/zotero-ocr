@@ -1,90 +1,79 @@
 // zotero-ocr.js
 
-// Formerly documented by https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules
-Components.utils.import("resource://gre/modules/FileUtils.jsm");
+// More information about the modules at https://searchfox.org/mozilla-central/source/dom/chrome-webidl
+if (Zotero.version >= "8") {
+    ChromeUtils.importESModule("resource://gre/modules/FileUtils.sys.mjs");
+    ChromeUtils.defineESModuleGetters(globalThis, {
+        Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
+    });
+} else {
+    Components.utils.import("resource://gre/modules/FileUtils.jsm");
+    // Components.utils.import("resource://gre/modules/Subprocess.jsm");
+    ChromeUtils.defineESModuleGetters(globalThis, {
+        Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
+    });
+}
+
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
-  try {
-    // Create a progress window using Zotero's API
-    const progressWindow = new Zotero.ProgressWindow({
-      closeOnClick: false
-    });
-    
-    // Set the headline/title
-    progressWindow.changeHeadline("Zotero OCR");
-    
-    // Show the window first before adding items
-    progressWindow.show();
-    
-    // Create a determined progress bar after showing the window
-    const icon = "chrome://zotero/skin/attachment-pdf.svg";
-    const progressBar = new progressWindow.ItemProgress(icon, message);
-    
-    // Set initial progress
-    if (initialProgress > 0) {
-      progressBar.setProgress(initialProgress);
-    }
-    
-    return {
-      updateProgress: (progress) => {
-        try {
-          const validProgress = Math.min(100, Math.max(0, progress));
-          progressBar.setProgress(validProgress);
-          return validProgress === 100;
-        } catch (e) {
-          console.error("Error updating progress:", e);
-          return false;
-        }
-      },
-      updateMessage: (newMessage) => {
-        try {
-          progressBar.setText(newMessage);
-        } catch (e) {
-          console.error("Error updating message:", e);
-        }
-      },
-      close: () => {
-        try {
-          progressWindow.close();
-        } catch (e) {
-          console.error("Error closing progress window:", e);
-        }
-      }
-    };
-  } catch (e) {
-    console.error("Error creating progress window:", e);
-    // Return dummy functions in case of failure
-    return {
-      updateProgress: () => false,
-      updateMessage: () => {},
-      close: () => {}
-    };
-  }
-}
-
-async function runOCRWithTimer(ocrEngine, parameters, progress) {
-    let seconds = 0;
-
-    // Log initial message
-    progress.updateMessage("Starting OCR process...");
-
-    // Start a timer that logs progress
-    const timer = setInterval(() => {
-        seconds++;
-        progress.updateMessage(`OCR running... ${seconds}s elapsed`);
-    }, 1000);
-
     try {
-        const result = await Zotero.Utilities.Internal.exec(ocrEngine, parameters);
-        progress.updateMessage(`OCR completed in ${seconds}s`);
-        return result;
+        // Create a progress window using Zotero's API
+        const progressWindow = new Zotero.ProgressWindow({
+            closeOnClick: false
+        });
+
+        // Set the headline/title
+        progressWindow.changeHeadline("Zotero OCR");
+
+        // Show the window first before adding items
+        progressWindow.show();
+
+        // Create a determined progress bar after showing the window
+        const icon = "chrome://zotero/skin/attachment-pdf.svg";
+        const progressBar = new progressWindow.ItemProgress(icon, message);
+
+        // Set initial progress
+        if (initialProgress > 0) {
+            progressBar.setProgress(initialProgress);
+        }
+
+        return {
+            updateProgress: (progress) => {
+                try {
+                    const validProgress = Math.min(100, Math.max(0, progress));
+                    progressBar.setProgress(validProgress);
+                    return validProgress === 100;
+                } catch (e) {
+                    console.error("Error updating progress:", e);
+                    return false;
+                }
+            },
+            updateMessage: (newMessage) => {
+                try {
+                    progressBar.setText(newMessage);
+                } catch (e) {
+                    console.error("Error updating message:", e);
+                }
+            },
+            close: () => {
+                try {
+                    progressWindow.close();
+                } catch (e) {
+                    console.error("Error closing progress window:", e);
+                }
+            }
+        };
     } catch (e) {
-        progress.updateMessage(`OCR failed after ${seconds}s`);
-        throw e;
-    } finally {
-        clearInterval(timer);
+        console.error("Error creating progress window:", e);
+        // Return dummy functions in case of failure
+        return {
+            updateProgress: () => false,
+            updateMessage: () => {},
+            close: () => {}
+        };
     }
 }
+
 
 ZoteroOCR = {
     id: null,
@@ -180,7 +169,7 @@ ZoteroOCR = {
                         // if checking one of the possible paths throws an error, definitely count as not found
                         externalCmdFound = false;
                     }
-                    
+
                     if (externalCmdFound) {
                         // found = true;
                         Zotero.debug("Found " + externalCmd);
@@ -195,26 +184,26 @@ ZoteroOCR = {
             }
             return externalCmd;
         }
-    
+
         /*
             Check the settings and alternative possible locations for pdftoppm and tesseract.
             If the last possible option doesn't exist, display an error message and quit.
         */
 
-        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
-        let pdftoppm = await checkExternalCmd("pdtfoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+        let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(await IOUtils.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);
             return;
         }
 
-        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
         let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
         if (!(await IOUtils.exists(ocrEngine))) {
             window.alert("No tesseract executable found, last check: " + ocrEngine);
             return;
         }
-        
+
         // Proceed with the actual selected items, process if the item is a PDF.
 
         let items = Zotero.getActiveZoteroPane().getSelectedItems();
@@ -228,7 +217,7 @@ ZoteroOCR = {
                     // => create an empty parent item to keep things tidy
                     if (pdfItem.isTopLevelItem()) {
                         await Zotero.getActiveZoteroPane().createEmptyParent(pdfItem);
-                    } 
+                    }
                     item = Zotero.Items.get(item.parentItemID);
                 }
                 else {
@@ -279,17 +268,26 @@ ZoteroOCR = {
             progress.updateMessage("Extracting pages...");
             // extract images from PDF
             let imageList = PathUtils.join(dir, 'image-list.txt');
+			let pageCount;
             if (!(await IOUtils.exists(imageList))) {
                 try {
                     Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-                    await Zotero.Utilities.Internal.exec(pdftoppm, pdftoppmCmdArgs);
+					let proc = await Subprocess.call({
+						command: pdftoppm,
+						arguments: pdftoppmCmdArgs,
+					})
+					let string;
+					while ((string = await proc.stdout.readString())) {
+						Zotero.debug("line: " + string)
+					}
+
                 }
                 catch (e) {
                     Zotero.logError(e);
                 }
 
                 var imageListArray = [];
-                
+
                 await IOUtils.getChildren(dir).then(
                     (entries) => {
                         for (const entry of entries) {
@@ -308,6 +306,7 @@ ZoteroOCR = {
                         Zotero.debug(imageListArray);
                         // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
                         imageListArray.sort();
+						pageCount = imageListArray.length;
 
                         // save the list of images in a separate file
                         Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
@@ -317,9 +316,10 @@ ZoteroOCR = {
 
             let parameters = [dir + '/image-list.txt'];
             parameters.push(ocrbase);
+
             parameters.push('--psm');
             parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
-            
+
             let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
             // Convert existing instances with older or buggy defaults to English OCR
             if (!ocrLanguage || ocrLanguage === 'undefined') {
@@ -339,8 +339,23 @@ ZoteroOCR = {
             try {
                 progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-                await runOCRWithTimer(ocrEngine, parameters, progress);
-                
+
+
+				let proc = await Subprocess.call({
+					command: ocrEngine,
+					arguments: parameters,
+						stderr: "stdout"
+				})
+				const regex = /Page (\d+) :/;
+				let string;
+				while ((string = await proc.stdout.readString())) {
+					Zotero.debug("output" + string)
+					const res = string.match(regex)
+					if(res) {
+						progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
+						Zotero.debug("page: " +  res[1])
+					}
+                }
             }
             catch (e) {
                 Zotero.logError(e);

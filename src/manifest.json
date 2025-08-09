@@ -14,7 +14,7 @@
       "id": "zotero-ocr@bib.uni-mannheim.de",
       "update_url": "https://raw.githubusercontent.com/UB-Mannheim/zotero-ocr/master/updates.json",
       "strict_min_version": "6.999",
-      "strict_max_version": "7.0.*"
+      "strict_max_version": "8.*"
     }
   }
 }

@@ -3,67 +3,68 @@
 // See https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules.
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Components.utils.import("resource://gre/modules/osfile.jsm");
+Components.utils.import("resource://gre/modules/Subprocess.jsm");
+
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
-  try {
-    // Create a progress window using Zotero's API
-    const progressWindow = new Zotero.ProgressWindow();
-    
-    // Set the headline/title
-    progressWindow.changeHeadline("Zotero OCR");
-    
-    // Show the window first before adding items
-    progressWindow.show();
-    
-    // Create a determined progress bar after showing the window
-    const icon = "chrome://zotero/skin/toolbar-item.png";
-    const progressBar = new progressWindow.ItemProgress(icon, message);
-    
-    // Set initial progress
-    if (initialProgress > 0) {
-      try {
-        progressBar.setProgress(initialProgress);
-      } catch (e) {
-        console.error("Error setting initial progress:", e);
-      }
+    try {
+        // Create a progress window using Zotero's API
+        const progressWindow = new Zotero.ProgressWindow({
+            closeOnClick: false
+        });
+
+        // Set the headline/title
+        progressWindow.changeHeadline("Zotero OCR");
+
+        // Show the window first before adding items
+        progressWindow.show();
+
+        // Create a determined progress bar after showing the window
+        const icon = "chrome://zotero/skin/attachment-pdf.svg";
+        const progressBar = new progressWindow.ItemProgress(icon, message);
+
+        // Set initial progress
+        if (initialProgress > 0) {
+            progressBar.setProgress(initialProgress);
+        }
+
+        return {
+            updateProgress: (progress) => {
+                try {
+                    const validProgress = Math.min(100, Math.max(0, progress));
+                    progressBar.setProgress(validProgress);
+                    return validProgress === 100;
+                } catch (e) {
+                    console.error("Error updating progress:", e);
+                    return false;
+                }
+            },
+            updateMessage: (newMessage) => {
+                try {
+                    progressBar.setText(newMessage);
+                } catch (e) {
+                    console.error("Error updating message:", e);
+                }
+            },
+            close: () => {
+                try {
+                    progressWindow.close();
+                } catch (e) {
+                    console.error("Error closing progress window:", e);
+                }
+            }
+        };
+    } catch (e) {
+        console.error("Error creating progress window:", e);
+        // Return dummy functions in case of failure
+        return {
+            updateProgress: () => false,
+            updateMessage: () => {},
+            close: () => {}
+        };
     }
-    
-    return {
-      updateProgress: (progress) => {
-        try {
-          const validProgress = Math.min(100, Math.max(0, progress));
-          progressBar.setProgress(validProgress);
-          return validProgress === 100;
-        } catch (e) {
-          console.error("Error updating progress:", e);
-          return false;
-        }
-      },
-      updateMessage: (newMessage) => {
-        try {
-          progressBar.setText(newMessage);
-        } catch (e) {
-          console.error("Error updating message:", e);
-        }
-      },
-      close: () => {
-        try {
-          progressWindow.close();
-        } catch (e) {
-          console.error("Error closing progress window:", e);
-        }
-      }
-    };
-  } catch (e) {
-    console.error("Error creating progress window:", e);
-    // Return dummy functions in case of failure
-    return {
-      updateProgress: () => false,
-      updateMessage: () => {},
-      close: () => {}
-    };
-  }
 }
+
 
 Zotero.OCR = new function() {
 
@@ -123,45 +124,20 @@ Zotero.OCR = new function() {
             return externalCmd;
         })
 
-
-        let runOCRWithTimer = Zotero.Promise.coroutine(function* (ocrEngine, parameters, progress) {
-            let seconds = 0;
-
-            // Log initial message
-            progress.updateMessage("Starting OCR process...");
-
-            // Start a timer that logs progress
-            const timer = setInterval(() => {
-                seconds++;
-                progress.updateMessage(`OCR running... ${seconds}s elapsed`);
-            }, 1000);
-
-            try {
-                yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
-                progress.updateMessage(`OCR completed in ${seconds}s`);
-                return "Done";
-            } catch (e) {
-                progress.updateMessage(`OCR failed after ${seconds}s`);
-                throw e;
-            } finally {
-                clearInterval(timer);
-            }
-        });
-
     
         /*
             Check the settings and alternative possible locations for pdftoppm and tesseract.
             If the last possible option doesn't exist, display an error message and quit.
         */
 
-        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
         let pdftoppm = yield checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
         if (!(yield OS.File.exists(pdftoppm))) {
             window.alert("No pdftoppm executable found, last check: " + pdftoppm);
             return;
         }
 
-        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/"];
+        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
         let ocrEngine = yield checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
         if (!(yield OS.File.exists(ocrEngine))) {
             window.alert("No tesseract executable found, last check: " + ocrEngine);
@@ -245,14 +221,40 @@ Zotero.OCR = new function() {
             progress.updateMessage("Extracting pages...");
             // extract images from PDF
             let imageList = OS.Path.join(dir, 'image-list.txt');
+            let pageCount;
             if (!(yield OS.File.exists(imageList))) {
                 try {
                     let pdfinfoCmdArgs = [pdf, infofile];
                     Zotero.debug("Running " + pdfinfo + ' ' + pdfinfoCmdArgs.join(' '));
-                    yield Zotero.Utilities.Internal.exec(pdfinfo, pdfinfoCmdArgs);
+                    
+                    let data;
+                    try {
+                        let proc1 = yield Subprocess.call({
+                            command: pdfinfo,
+                            arguments: pdfinfoCmdArgs 
+                        });
+
+                        while ((data = yield proc1.stdout.readString())) {
+                            Zotero.debug("Received:", data);
+                        }
+                    
+                    } catch (ex) {
+                        Zotero.debug("Process error:", ex);
+                    }
 
                     Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-                    yield Zotero.Utilities.Internal.exec(pdftoppm, pdftoppmCmdArgs);
+                    try {
+                        let proc2 = yield Subprocess.call({
+                            command: pdftoppm,
+                            arguments: pdftoppmCmdArgs 
+                        });
+
+                        while ((string = yield proc2.stdout.readString())) {
+                            Zotero.debug("line:", string);
+                        }
+                    } catch (ex) {
+                        Zotero.debug("Process error:", ex);
+                    }
                 }
                 catch (e) {
                     Zotero.logError(e);
@@ -269,6 +271,7 @@ Zotero.OCR = new function() {
                         imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
                     }
                 }
+                pageCount = imageListArray.length;
                 Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
             }
 
@@ -295,8 +298,21 @@ Zotero.OCR = new function() {
             try {
             	progress.updateMessage("Processing... please be patient");
                 Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
-                // yield Zotero.Utilities.Internal.exec(ocrEngine, parameters);
-                yield runOCRWithTimer(ocrEngine, parameters, progress);
+                let proc = yield Subprocess.call({
+                    command: ocrEngine,
+                    arguments: parameters,
+                        stderr: "stdout"
+                })
+                const regex = /Page (\d+) :/;
+                let string;
+                while ((string = yield proc.stdout.readString())) {
+                    Zotero.debug("output" + string)
+                    const res = string.match(regex)
+                    if (res) {
+                        progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
+                        Zotero.debug("page: " +  res[1])
+                    }
+                }
             }
             catch (e) {
                 Zotero.logError(e);

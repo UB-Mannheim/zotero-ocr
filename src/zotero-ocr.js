@@ -252,17 +252,17 @@ ZoteroOCR = {
             // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
             // Use progressive JPEG: yes (pdftoppm default is no)
             let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
-            let pdftoppmCmdArgs;
+            let pdftoppmCmdArgs = ['-progress'];
             if (imageFormat == "jpg" || imageFormat == "jpeg") {
                 imageFormat = "jpg";
                 let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
                 let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
                 let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                pdftoppmCmdArgs = ['-jpeg', '-jpegopt', 'quality='+jpegQuality+',progressive='+jpegProgressive+',optimize='+jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                pdftoppmCmdArgs = [...pdftoppmCmdArgs,'-jpeg', '-jpegopt', 'quality='+jpegQuality+',progressive='+jpegProgressive+',optimize='+jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
 
             } else {
                 imageFormat = "png";
-                pdftoppmCmdArgs = ['-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                pdftoppmCmdArgs = [...pdftoppmCmdArgs,'-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
             }
 
             progress.updateMessage("Extracting pages...");
@@ -275,9 +275,15 @@ ZoteroOCR = {
 					let proc = await Subprocess.call({
 						command: pdftoppm,
 						arguments: pdftoppmCmdArgs,
+					    stderr: "stdout"
 					})
+					let regex = /(\d+) (\d+) (.+)/;
 					let string;
 					while ((string = await proc.stdout.readString())) {
+						let res = regex.exec(string);
+						if(res) {
+						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]} (${res[3]}) `)
+						}
 						Zotero.debug("line: " + string)
 					}
 

@@ -145,7 +145,7 @@ ZoteroOCR = {
     },
 
     async recognize(window) {
-        Zotero.debug("entering recognize()");
+        log("entering recognize()");
 
         const progress = createZoteroProgressWindow("Initializing...", 0);
 
@@ -158,7 +158,7 @@ ZoteroOCR = {
             if (!externalCmd) {
                 // look for externalCmd in various possible directories
                 for (externalCmd of possiblePath) {
-                    Zotero.debug("will try to locate " + externalCmd);
+                    log("will try to locate " + externalCmd);
                     externalCmd += exeName;
                     if (Zotero.isWin) {
                         externalCmd += ".exe";
@@ -172,11 +172,11 @@ ZoteroOCR = {
 
                     if (externalCmdFound) {
                         // found = true;
-                        Zotero.debug("Found " + externalCmd);
+                        log("Found " + externalCmd);
                         Zotero.Prefs.set(exePref, externalCmd);
                         break;
                     }
-                    Zotero.debug("No " + externalCmd);
+                    log("No " + externalCmd);
                 }
             }
             if (Zotero.isWin && !(externalCmd.endsWith(".exe"))) {
@@ -271,7 +271,7 @@ ZoteroOCR = {
 			let pageCount;
             if (!(await IOUtils.exists(imageList))) {
                 try {
-                    Zotero.debug("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
+                    log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
 					let proc = await Subprocess.call({
 						command: pdftoppm,
 						arguments: pdftoppmCmdArgs,
@@ -282,9 +282,9 @@ ZoteroOCR = {
 					while ((string = await proc.stdout.readString())) {
 						let res = regex.exec(string);
 						if(res) {
-						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]} (${res[3]}) `)
+						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
 						}
-						Zotero.debug("line: " + string)
+						log("line: " + string)
 					}
 
                 }
@@ -297,7 +297,6 @@ ZoteroOCR = {
                 await IOUtils.getChildren(dir).then(
                     (entries) => {
                         for (const entry of entries) {
-                            Zotero.debug('IOutils.getChildren() ran', entry);
                             if (imageFormat == "jpg") {
                                 if (entry.match(/-\d+\.jpg$/)) {
                                     imageListArray.push(entry);
@@ -308,8 +307,6 @@ ZoteroOCR = {
                                 }
                             }
                         }
-                        Zotero.debug('Files are now:')
-                        Zotero.debug(imageListArray);
                         // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
                         imageListArray.sort();
 						pageCount = imageListArray.length;
@@ -344,7 +341,7 @@ ZoteroOCR = {
             }
             try {
                 progress.updateMessage("Processing... please be patient");
-                Zotero.debug("Running " + ocrEngine + ' ' + parameters.join(' '));
+                log("Running " + ocrEngine + ' ' + parameters.join(' '));
 
 
 				let proc = await Subprocess.call({
@@ -355,11 +352,11 @@ ZoteroOCR = {
 				const regex = /Page (\d+) :/;
 				let string;
 				while ((string = await proc.stdout.readString())) {
-					Zotero.debug("output" + string)
+					log("output" + string)
 					const res = string.match(regex)
 					if(res) {
 						progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
-						Zotero.debug("page: " +  res[1])
+						log("page: " +  res[1])
 					}
                 }
             }

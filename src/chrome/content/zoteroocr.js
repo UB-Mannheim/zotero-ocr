@@ -97,7 +97,7 @@ Zotero.OCR = new function() {
             if (!externalCmd) {
                 // look for externalCmd in various possible directories
                 for (externalCmd of possiblePath) {
-                    Zotero.debug("will try to locate " + externalCmd);
+                    log("will try to locate " + externalCmd);
                     externalCmd += exeName;
                     if (Zotero.isWin) {
                         externalCmd += ".exe";
@@ -255,7 +255,7 @@ Zotero.OCR = new function() {
                             let res = regex.exec(string);
                             if (res) {
 
-						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]} (${res[3]}) `)
+						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
                             }
                             Zotero.debug("line:", string);
                         }

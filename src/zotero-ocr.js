@@ -15,6 +15,10 @@ if (Zotero.version >= "8") {
 }
 
 
+function log(msg) {
+  Zotero.debug("ZoteroOCR: " + msg);
+}
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     try {
         // Create a progress window using Zotero's API
@@ -88,10 +92,6 @@ ZoteroOCR = {
         this.version = version;
         this.rootURI = rootURI;
         this.initialized = true;
-    },
-
-    log(msg) {
-        Zotero.debug("ZoteroOCR: " + msg);
     },
 
     addToWindow(window) {

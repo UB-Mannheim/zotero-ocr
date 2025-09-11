@@ -16,7 +16,9 @@ if (Zotero.version >= "8") {
 
 
 function log(msg) {
-  Zotero.debug("ZoteroOCR: " + msg);
+    let message = "ZoteroOCR: " + msg;
+    Zotero.debug(message);
+    return message;
 }
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
@@ -131,7 +133,7 @@ ZoteroOCR = {
         var doc = window.document;
         // Remove all elements added to DOM
         for (let id of this.addedElementIDs) {
-            doc.getElementById(id)?.remove();
+            doc.getElementById(id).remove();
         }
         doc.querySelector('[href="zotero-ocr.ftl"]').remove();
     },
@@ -145,11 +147,15 @@ ZoteroOCR = {
     },
 
     async recognize(window) {
-        log("entering recognize()");
+
+        let logString;
+
+        logString = log("entering recognize()");
 
         const progress = createZoteroProgressWindow("Initializing...", 0);
 
         async function checkExternalCmd(exeName, exePref, possiblePath) {
+
             // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
             // If it is found, the settings are updated.
             // Otherwise the last possible location is returned.
@@ -158,25 +164,25 @@ ZoteroOCR = {
             if (!externalCmd) {
                 // look for externalCmd in various possible directories
                 for (externalCmd of possiblePath) {
-                    log("will try to locate " + externalCmd);
+                    logString = log("will try to locate " + externalCmd);
                     externalCmd += exeName;
                     if (Zotero.isWin) {
                         externalCmd += ".exe";
                     }
                     try {
                         externalCmdFound = await IOUtils.exists(externalCmd);
-                    } catch(e) {
+                    } catch (e) {
                         // if checking one of the possible paths throws an error, definitely count as not found
                         externalCmdFound = false;
                     }
 
                     if (externalCmdFound) {
                         // found = true;
-                        log("Found " + externalCmd);
+                        logString = log("Found " + externalCmd);
                         Zotero.Prefs.set(exePref, externalCmd);
                         break;
                     }
-                    log("No " + externalCmd);
+                    logString = log("No " + externalCmd);
                 }
             }
             if (Zotero.isWin && !(externalCmd.endsWith(".exe"))) {
@@ -185,264 +191,272 @@ ZoteroOCR = {
             return externalCmd;
         }
 
-        /*
-            Check the settings and alternative possible locations for pdftoppm and tesseract.
-            If the last possible option doesn't exist, display an error message and quit.
-        */
+        try {
 
-        let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
-        let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
-        if (!(await IOUtils.exists(pdftoppm))) {
-            window.alert("No pdftoppm executable found, last check: " + pdftoppm);
-            return;
-        }
+            /*
+                Check the settings and alternative possible locations for pdftoppm and tesseract.
+                If the last possible option doesn't exist, display an error message and quit.
+            */
 
-        let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
-        let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
-        if (!(await IOUtils.exists(ocrEngine))) {
-            window.alert("No tesseract executable found, last check: " + ocrEngine);
-            return;
-        }
+            let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+            let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+            if (!(await IOUtils.exists(pdftoppm))) {
+                window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+                return;
+            }
 
-        // Proceed with the actual selected items, process if the item is a PDF.
+            let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+            let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
+            if (!(await IOUtils.exists(ocrEngine))) {
+                window.alert("No tesseract executable found, last check: " + ocrEngine);
+                return;
+            }
 
-        let items = Zotero.getActiveZoteroPane().getSelectedItems();
-        for (let item of items) {
-            // find the PDF
-            let pdfItem;
-            if (item.isAttachment()) {
-                if (item.isFileAttachment() && item.attachmentContentType == 'application/pdf') {
-                    pdfItem = item;
-                    // if the PDF has no parent item, there is no reasonable place to attach the output files
-                    // => create an empty parent item to keep things tidy
-                    if (pdfItem.isTopLevelItem()) {
-                        await Zotero.getActiveZoteroPane().createEmptyParent(pdfItem);
+            // Proceed with the actual selected items, process if the item is a PDF.
+
+            let items = Zotero.getActiveZoteroPane().getSelectedItems();
+            for (let item of items) {
+                // find the PDF
+                let pdfItem;
+                if (item.isAttachment()) {
+                    if (item.isFileAttachment() && item.attachmentContentType == 'application/pdf') {
+                        pdfItem = item;
+                        // if the PDF has no parent item, there is no reasonable place to attach the output files
+                        // => create an empty parent item to keep things tidy
+                        if (pdfItem.isTopLevelItem()) {
+                            await Zotero.getActiveZoteroPane().createEmptyParent(pdfItem);
+                        }
+                        item = Zotero.Items.get(item.parentItemID);
+                    } else {
+                        window.alert("Item is an attachment but not PDF and will be ignored.");
+                        continue;
                     }
-                    item = Zotero.Items.get(item.parentItemID);
+                } else {
+                    let pdfAttachments = item.getAttachments(false)
+                        .map(itemID => Zotero.Items.get(itemID))
+                        .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
+                    if (pdfAttachments.length == 0) {
+                        window.alert("No PDF found for the selected item.");
+                        continue;
+                    }
+                    if (pdfAttachments.length > 1) {
+                        window.alert("There are several PDFs attached to this item. Only the first one will be processed.");
+                    }
+                    pdfItem = pdfAttachments[0];
                 }
-                else {
-                    window.alert("Item is an attachment but not PDF and will be ignored.");
-                    continue;
+
+                let pdf = pdfItem.getFilePath();
+                let base = pdf.replace(/\.pdf$/, '');
+                let dir = PathUtils.parent(pdf);
+                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
+                // TODO filter out PDFs which have already a text layer
+
+                // build the pdftoppm arguments based on hidden preferences:
+                // => will produce a PDF output with reasonable size and image quality
+                // File format: JPEG by default instead of PNG
+                // JPEG quality 70/100 (pdftoppm default is 75)
+                // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
+                // Use progressive JPEG: yes (pdftoppm default is no)
+                let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
+                let pdftoppmCmdArgs = ['-progress'];
+                if (imageFormat == "jpg" || imageFormat == "jpeg") {
+                    imageFormat = "jpg";
+                    let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
+                    let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
+                    let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+
+                } else {
+                    imageFormat = "png";
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
                 }
-            }
-            else {
-                let pdfAttachments = item.getAttachments(false)
-                    .map(itemID => Zotero.Items.get(itemID))
-                    .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
-                if (pdfAttachments.length == 0) {
-                    window.alert("No PDF found for the selected item.");
-                    continue;
+
+                logString = "Extracting pages...";
+                progress.updateMessage(logString);
+                // extract images from PDF
+                let imageList = PathUtils.join(dir, 'image-list.txt');
+                let pageCount;
+                if (!(await IOUtils.exists(imageList))) {
+                    try {
+                        logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
+                        let proc = await Subprocess.call({
+                            command: pdftoppm,
+                            arguments: pdftoppmCmdArgs,
+                            stderr: "stdout"
+                        })
+                        let regex = /(\d+) (\d+) (.+)/;
+                        let string;
+                        while ((string = await proc.stdout.readString())) {
+                            let res = regex.exec(string);
+                            if (res) {
+                                progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+                            }
+                            logString = log("line: " + string)
+                        }
+
+                    } catch (e) {
+                        Zotero.logError(e);
+                    }
+
+                    var imageListArray = [];
+
+                    await IOUtils.getChildren(dir).then(
+                        (entries) => {
+                            for (const entry of entries) {
+                                if (imageFormat == "jpg") {
+                                    if (entry.match(/-\d+\.jpg$/)) {
+                                        imageListArray.push(entry);
+                                    }
+                                } else {
+                                    if (entry.match(/-\d+\.png$/)) {
+                                        imageListArray.push(entry);
+                                    }
+                                }
+                            }
+                            // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
+                            imageListArray.sort();
+                            pageCount = imageListArray.length;
+
+                            // save the list of images in a separate file
+                            Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
+                        }
+                    );
                 }
-                if (pdfAttachments.length > 1) {
-                    window.alert("There are several PDFs attached to this item. Only the first one will be processed.");
+
+                let parameters = [dir + '/image-list.txt'];
+                parameters.push(ocrbase);
+
+                parameters.push('--psm');
+                parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
+
+                let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
+                // Convert existing instances with older or buggy defaults to English OCR
+                if (!ocrLanguage || ocrLanguage === 'undefined') {
+                    ocrLanguage = 'eng';
+                    Zotero.Prefs.set("zoteroocr.language", ocrLanguage);
                 }
-                pdfItem = pdfAttachments[0];
-            }
+                parameters.push('-l');
+                parameters.push(ocrLanguage);
 
-            let pdf = pdfItem.getFilePath();
-            let base = pdf.replace(/\.pdf$/, '');
-            let dir = PathUtils.parent(pdf);
-            let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
-            // TODO filter out PDFs which have already a text layer
-
-            // build the pdftoppm arguments based on hidden preferences:
-            // => will produce a PDF output with reasonable size and image quality
-            // File format: JPEG by default instead of PNG
-            // JPEG quality 70/100 (pdftoppm default is 75)
-            // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
-            // Use progressive JPEG: yes (pdftoppm default is no)
-            let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
-            let pdftoppmCmdArgs = ['-progress'];
-            if (imageFormat == "jpg" || imageFormat == "jpeg") {
-                imageFormat = "jpg";
-                let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
-                let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
-                let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                pdftoppmCmdArgs = [...pdftoppmCmdArgs,'-jpeg', '-jpegopt', 'quality='+jpegQuality+',progressive='+jpegProgressive+',optimize='+jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
-
-            } else {
-                imageFormat = "png";
-                pdftoppmCmdArgs = [...pdftoppmCmdArgs,'-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
-            }
-
-            progress.updateMessage("Extracting pages...");
-            // extract images from PDF
-            let imageList = PathUtils.join(dir, 'image-list.txt');
-			let pageCount;
-            if (!(await IOUtils.exists(imageList))) {
+                parameters.push('txt');
+                if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
+                    parameters.push('pdf');
+                }
+                if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
+                    parameters.push('hocr');
+                }
                 try {
-                    log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-					let proc = await Subprocess.call({
-						command: pdftoppm,
-						arguments: pdftoppmCmdArgs,
-					    stderr: "stdout"
-					})
-					let regex = /(\d+) (\d+) (.+)/;
-					let string;
-					while ((string = await proc.stdout.readString())) {
-						let res = regex.exec(string);
-						if(res) {
-						progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
-						}
-						log("line: " + string)
-					}
+                    progress.updateMessage("Processing... please be patient");
+                    logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
 
-                }
-                catch (e) {
+
+                    let proc = await Subprocess.call({
+                        command: ocrEngine,
+                        arguments: parameters,
+                        stderr: "stdout"
+                    })
+                    const regex = /Page (\d+) :/;
+                    let string;
+                    while ((string = await proc.stdout.readString())) {
+                        logString = log("output" + string)
+                        const res = string.match(regex)
+                        if (res) {
+                            progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
+                            logString = log("page: " + res[1])
+                        }
+                    }
+                } catch (e) {
                     Zotero.logError(e);
                 }
 
-                var imageListArray = [];
+                logString = "OCR completed: attaching output";
+                progress.updateMessage(logString);
 
-                await IOUtils.getChildren(dir).then(
-                    (entries) => {
-                        for (const entry of entries) {
-                            if (imageFormat == "jpg") {
-                                if (entry.match(/-\d+\.jpg$/)) {
-                                    imageListArray.push(entry);
-                                }
-                            } else {
-                                if (entry.match(/-\d+\.png$/)) {
-                                    imageListArray.push(entry);
-                                }
-                            }
-                        }
-                        // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
-                        imageListArray.sort();
-						pageCount = imageListArray.length;
+                if (Zotero.Prefs.get("zoteroocr.outputNote")) {
+                    let contents = await Zotero.File.getContentsAsync(ocrbase + '.txt');
+                    contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
+                    let newNote = new Zotero.Item('note');
+                    newNote.setNote(contents);
+                    newNote.parentID = item.id;
+                    newNote.libraryID = item.libraryID;
+                    await newNote.saveTx();
+                }
 
-                        // save the list of images in a separate file
-                        Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
+                if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
+                    let contents = await Zotero.File.getContentsAsync(ocrbase + '.hocr');
+                    // replace the absolute paths of images with relative ones
+                    let escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    let regexp = new RegExp(escapedDir + "/", 'g');
+                    contents = contents.replace(regexp, '');
+                    // split content into the preamble and pages
+                    contents = contents.replace("</body>\n</html>", '');
+                    let parts = contents.split("<div class='ocr_page'");
+                    let preamble = parts[0];
+                    // create new html attachments including hocrjs for individual pages
+                    let maximumPagesAsHtml = parseInt(Zotero.Prefs.get("zoteroocr.maximumPagesAsHtml"));
+                    let upperLimit = parts.length;
+                    if (!(isNaN(maximumPagesAsHtml)) && (maximumPagesAsHtml + 1 < upperLimit)) {
+                        upperLimit = maximumPagesAsHtml + 1;
                     }
-                );
-            }
-
-            let parameters = [dir + '/image-list.txt'];
-            parameters.push(ocrbase);
-
-            parameters.push('--psm');
-            parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
-
-            let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
-            // Convert existing instances with older or buggy defaults to English OCR
-            if (!ocrLanguage || ocrLanguage === 'undefined') {
-                ocrLanguage = 'eng';
-                Zotero.Prefs.set("zoteroocr.language", ocrLanguage);
-            }
-            parameters.push('-l');
-            parameters.push(ocrLanguage);
-
-            parameters.push('txt');
-            if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
-                parameters.push('pdf');
-            }
-            if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
-                parameters.push('hocr');
-            }
-            try {
-                progress.updateMessage("Processing... please be patient");
-                log("Running " + ocrEngine + ' ' + parameters.join(' '));
-
-
-				let proc = await Subprocess.call({
-					command: ocrEngine,
-					arguments: parameters,
-						stderr: "stdout"
-				})
-				const regex = /Page (\d+) :/;
-				let string;
-				while ((string = await proc.stdout.readString())) {
-					log("output" + string)
-					const res = string.match(regex)
-					if(res) {
-						progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
-						log("page: " +  res[1])
-					}
+                    for (let i = 1; i < upperLimit; i++) {
+                        let pagename = 'page-' + i + '.html';
+                        let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
+                        let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
+                        Zotero.File.putContents(htmlfile, pagecontent);
+                        // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                        if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+                            await Zotero.Attachments.importFromFile({
+                                file: PathUtils.join(dir, pagename),
+                                contentType: "text/html",
+                                libraryID: item.libraryID,
+                                parentItemID: item.id,
+                            });
+                            await Zotero.File.removeIfExists(PathUtils.join(dir, pagename));
+                        } else {
+                            await Zotero.Attachments.linkFromFile({
+                                file: PathUtils.join(dir, pagename),
+                                contentType: "text/html",
+                                parentItemID: item.id
+                            });
+                        }
+                    }
                 }
-            }
-            catch (e) {
-                Zotero.logError(e);
-            }
 
-            progress.updateMessage("OCR completed: attaching output");
-
-            if (Zotero.Prefs.get("zoteroocr.outputNote")) {
-                let contents = await Zotero.File.getContentsAsync(ocrbase + '.txt');
-                contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
-                let newNote = new Zotero.Item('note');
-                newNote.setNote(contents);
-                newNote.parentID = item.id;
-                newNote.libraryID = item.libraryID;
-                await newNote.saveTx();
-            }
-
-            if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
-                let contents = await Zotero.File.getContentsAsync(ocrbase + '.hocr');
-                // replace the absolute paths of images with relative ones
-                let escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                let regexp = new RegExp(escapedDir + "/", 'g');
-                contents = contents.replace(regexp, '');
-                // split content into the preamble and pages
-                contents = contents.replace("</body>\n</html>", '');
-                let parts = contents.split("<div class='ocr_page'");
-                let preamble = parts[0];
-                // create new html attachments including hocrjs for individual pages
-                let maximumPagesAsHtml = parseInt(Zotero.Prefs.get("zoteroocr.maximumPagesAsHtml"));
-                let upperLimit = parts.length;
-                if (!(isNaN(maximumPagesAsHtml)) && (maximumPagesAsHtml + 1 < upperLimit)) {
-                    upperLimit = maximumPagesAsHtml + 1;
-                }
-                for (let i = 1; i < upperLimit; i++) {
-                    let pagename = 'page-' + i + '.html';
-                    let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
-                    let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
-                    Zotero.File.putContents(htmlfile, pagecontent);
+                // attach PDF if it is a new one
+                if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
                     // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
                     if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                         await Zotero.Attachments.importFromFile({
-                            file: PathUtils.join(dir, pagename),
-                            contentType: "text/html",
+                            file: ocrbase + '.pdf',
                             libraryID: item.libraryID,
                             parentItemID: item.id,
                         });
-                        await Zotero.File.removeIfExists(PathUtils.join(dir, pagename));
+                        await Zotero.File.removeIfExists(ocrbase + '.pdf');
                     } else {
                         await Zotero.Attachments.linkFromFile({
-                            file: PathUtils.join(dir, pagename),
-                            contentType: "text/html",
+                            file: ocrbase + '.pdf',
                             parentItemID: item.id
                         });
                     }
                 }
-            }
 
-            // attach PDF if it is a new one
-            if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-                // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
-                if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
-                    await Zotero.Attachments.importFromFile({
-                        file: ocrbase + '.pdf',
-                        libraryID: item.libraryID,
-                        parentItemID: item.id,
-                    });
-                    await Zotero.File.removeIfExists(ocrbase + '.pdf');
-                } else {
-                    await Zotero.Attachments.linkFromFile({
-                        file: ocrbase + '.pdf',
-                        parentItemID: item.id
-                    });
+                if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
+                    // delete image list
+                    await Zotero.File.removeIfExists(imageList);
+                    // delete PNGs
+                    for (let imageName of imageListArray) {
+                        await Zotero.File.removeIfExists(imageName);
+                    }
                 }
             }
 
-            if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
-                // delete image list
-                await Zotero.File.removeIfExists(imageList);
-                // delete PNGs
-                for (let imageName of imageListArray) {
-                    await Zotero.File.removeIfExists(imageName);
-                }
-            }
+        } catch (error) {
+            let alertMessage = "Last ZoteroOCR log message: " + logString + "\n\nZoteroOCR error: " + error.message;
+            window.alert(alertMessage);
+
+        } finally {
+            progress.close();
         }
-    progress.close();
     }
+
 };

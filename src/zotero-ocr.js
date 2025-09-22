@@ -50,7 +50,8 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
                     progressBar.setProgress(validProgress);
                     return validProgress === 100;
                 } catch (e) {
-                    console.error("Error updating progress:", e);
+                    log("Error updating progress:");
+                    log(e);
                     return false;
                 }
             },
@@ -58,19 +59,22 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
                 try {
                     progressBar.setText(newMessage);
                 } catch (e) {
-                    console.error("Error updating message:", e);
+                    log("Error updating message:");
+                    log(e);
                 }
             },
             close: () => {
                 try {
                     progressWindow.close();
                 } catch (e) {
-                    console.error("Error closing progress window:", e);
+                    log("Error closing progress window:");
+                    log(e);
                 }
             }
         };
     } catch (e) {
-        console.error("Error creating progress window:", e);
+        log("Error creating progress window:");
+        log(e);
         // Return dummy functions in case of failure
         return {
             updateProgress: () => false,
@@ -277,25 +281,38 @@ ZoteroOCR = {
                 let imageList = PathUtils.join(dir, 'image-list.txt');
                 let pageCount;
                 if (!(await IOUtils.exists(imageList))) {
-                    try {
-                        logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-                        let proc = await Subprocess.call({
-                            command: pdftoppm,
-                            arguments: pdftoppmCmdArgs,
-                            stderr: "stdout"
-                        })
-                        let regex = /(\d+) (\d+) (.+)/;
-                        let string;
-                        while ((string = await proc.stdout.readString())) {
-                            let res = regex.exec(string);
-                            if (res) {
-                                progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
-                            }
-                            logString = log("line: " + string)
+                    logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
+                    let proc = await Subprocess.call({
+                        command: pdftoppm,
+                        arguments: pdftoppmCmdArgs,
+                        stderr: "stdout"
+                    })
+                    let regex = /(\d+) (\d+) (.+)/;
+                    let string;
+
+                    const errorRegex = /Error /
+                    let errorLog = ''
+                    let errorLogOn = false
+
+                    while ((string = await proc.stdout.readString())) {
+
+                        if (!errorLogOn) {
+                            errorLogOn = string.match(errorRegex)
+                        }
+                
+                        if (errorLogOn) {
+                            errorLog += string
                         }
 
-                    } catch (e) {
-                        Zotero.logError(e);
+                        let res = regex.exec(string);
+                        if (res) {
+                            progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+                        }
+                        logString = log("line: " + string)
+                    }
+
+                    if (errorLogOn) {
+                        throw new Error(errorLog)
                     }
 
                     var imageListArray = [];
@@ -321,13 +338,26 @@ ZoteroOCR = {
                             Zotero.File.putContents(Zotero.File.pathToFile(imageList), imageListArray.join('\n'));
                         }
                     );
+                } else {
+                    // if image-list already exists, must read it to know pageCount
+                    let buffer = await Zotero.File.getContentsAsync(imageList)
+                    let lines = buffer.split(/[^\r\n]+/g)
+                    pageCount = lines.length - 1
                 }
 
-                let parameters = [dir + '/image-list.txt'];
+                let parameters = [imageList];
                 parameters.push(ocrbase);
 
                 parameters.push('--psm');
-                parameters.push(Zotero.Prefs.get("zoteroocr.PSMMode"));
+                // PSM 2 is not implemented in tesseract
+                const validModes = ["0", "1", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
+                let PSMMode = Zotero.Prefs.get("zoteroocr.psmmode");
+                // If PSMMode isn't an integer in the tesseract-required range, overwrite the value
+                if (validModes.indexOf(PSMMode) < 0) {
+                    PSMMode = "3";
+                    Zotero.Prefs.set("zoteroocr.psmmode", PSMMode);
+                }
+                parameters.push(PSMMode);
 
                 let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
                 // Convert existing instances with older or buggy defaults to English OCR
@@ -345,30 +375,46 @@ ZoteroOCR = {
                 if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
                     parameters.push('hocr');
                 }
-                try {
-                    progress.updateMessage("Processing... please be patient");
-                    logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
+                
+                progress.updateMessage("Processing... please be patient");
+                logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
 
 
-                    let proc = await Subprocess.call({
-                        command: ocrEngine,
-                        arguments: parameters,
-                        stderr: "stdout"
-                    })
-                    const regex = /Page (\d+) :/;
-                    let string;
-                    while ((string = await proc.stdout.readString())) {
-                        logString = log("output" + string)
-                        const res = string.match(regex)
-                        if (res) {
-                            progress.updateMessage(`Processing page ${res[1]} of ${pageCount}`)
-                            logString = log("page: " + res[1])
-                        }
+                let proc = await Subprocess.call({
+                    command: ocrEngine,
+                    arguments: parameters,
+                    stderr: "stdout"
+                })
+                const pageRegex = /Page (\d+) :/
+                let string
+                
+                const errorRegex = /Error /
+                let errorLog = ''
+                let errorLogOn = false
+
+                while ((string = await proc.stdout.readString())) {
+                    // logString = log(ocrEngine + " output \n" + string)
+
+                    if (!errorLogOn) {
+                        errorLogOn = string.match(errorRegex)
                     }
-                } catch (e) {
-                    Zotero.logError(e);
-                }
+                    
+                    if (errorLogOn) {
+                        errorLog += string
+                    }
 
+                    const res = string.match(pageRegex)
+                    if (res) {
+                        let current = parseInt(res[1])
+                        // display page count starting at 1 instead ot zero
+                        progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
+                        logString = log(`page: ${current + 1}`)
+                    }
+                }
+                if (errorLogOn) {
+                    throw new Error(errorLog)
+                }
+                
                 logString = "OCR completed: attaching output";
                 progress.updateMessage(logString);
 

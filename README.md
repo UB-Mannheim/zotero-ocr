@@ -66,7 +66,7 @@ You can start Zotero OCR using the context menu for your PDF in Zotero:
 
 ![Start the plugin](./screenshots/pdfselection.png)
 
-The plugin will take some to process your PDF (one single page can take several seconds), be patient. If your PDF didn't have a parent item (https://www.zotero.org/support/kb/library_items), Zotero OCR will immeditately create one to ensure that its output file will be clearly associated with your PDF. The parent item is where you can enter proper metadata for your PDF, which will facilitate proper Zotero citations if you need them.
+The plugin will take some to process your PDF (one single page can take several seconds), be patient. If your PDF didn't have a parent item (https://www.zotero.org/support/kb/library_items), Zotero OCR will immediately create one to ensure that its output file will be clearly associated with your PDF. The parent item is where you can enter proper metadata for your PDF, which will facilitate proper Zotero citations if you need them.
 
 After processing, Zotero OCR will attach its output files to the parent item. Using the default settings, you will obtain:
 * HTML attachments for the first 5 pages of the PDF (listed as page-1, page-2, etc.). This is mostly useful to verify that tesseract has been executed properly.
@@ -75,7 +75,7 @@ After processing, Zotero OCR will attach its output files to the parent item. Us
 
 ![It worked!](./screenshots/after-ocr.png)
 
-The defaut Zotero OCR settings are intended to facilitate troubleshooting, and you might prefer to save some space. When you feel confident that everything is working, you may change your Zotero OCR settings to produce fewer intermediate files and attachments:
+The default Zotero OCR settings are intended to facilitate troubleshooting, and you might prefer to save some space. When you feel confident that everything is working, you may change your Zotero OCR settings to produce fewer intermediate files and attachments:
 * HTML/hocr files and intermediate images can be unselected without any risk.
 * Overwriting the initial PDF with the output can be convenient, in particular it will usually ensure that the attachment with a text layer will be the main one for your Zotero reference. However, you might lose your PDF if something goes wrong (possible, even if unlikely) - caution is advised.
 

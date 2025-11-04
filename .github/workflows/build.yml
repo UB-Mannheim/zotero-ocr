@@ -16,7 +16,7 @@ jobs:
     name: Build Zotero OCR plugin
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: read
     runs-on: ubuntu-latest
 
     steps:

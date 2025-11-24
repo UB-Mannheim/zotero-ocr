@@ -340,7 +340,7 @@ Zotero.OCR = new function() {
                 // Detect errors but ignore most Leptonica messages
                 // reported by functions such as boxClipToRectangle, pixScanForForeground...
                 // indicating recognition problems on one page or another but no critical tesseract failure.
-                // Based on the function names in Leptoninca's src/allheaders.h
+                // Based on the function names in Leptonica's src/allheaders.h
                 // using only those that should be specific enough (ca. 2400 matches out of 2750)
                 const errorRegex = /Error(?! in ((bbuffer|bmf|box|ccb|dewarp|dna|fpix|gplot|jb|l_amap|l_aset|l_binary|l_byte|l_clear|l_colorfill|l_convert|l_generate|l_get|l_hash|l_hmap|l_make|l_pdf|l_png|l_product|l_ps|l_rbtree|l_set|l_uncompress|lheap|lqueue|lstack|num|pix|pixacc|pixacomp|pixcmap|pixcomp|pms|projective|pta|ptr|rasterop|rch|recog|sa|sarray|sel|sudoku|wshed)a{0,2}[A-Z0-9]|lept_|l_bootnum))/
                 let errorLog = ''

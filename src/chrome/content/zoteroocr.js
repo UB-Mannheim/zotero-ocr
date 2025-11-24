@@ -337,7 +337,7 @@ Zotero.OCR = new function() {
                 const pageRegex = /Page (\d+) :/
                 let string
             
-                // Detect errors but ignpore most Leptonica messages
+                // Detect errors but ignore most Leptonica messages
                 // reported by functions such as boxClipToRectangle, pixScanForForeground...
                 // indicating recognition problems on one page or another but no critical tessrract failure.
                 // Based on the function names in Leptoninca's src/allheaders.h

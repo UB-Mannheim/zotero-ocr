@@ -263,7 +263,6 @@ Zotero.OCR = new function() {
                         let regex = /(\d+) (\d+) (.+)/;
                         let string;
                         while ((string = yield proc2.stdout.readString())) {
-
                             let res = regex.exec(string);
                             if (res) {
 

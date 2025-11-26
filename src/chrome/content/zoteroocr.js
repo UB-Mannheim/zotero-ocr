@@ -243,6 +243,9 @@ Zotero.OCR = new function() {
                         });
 
                         while ((data = yield proc1.stdout.readString())) {
+                            // Display the captured string in the log messages, so that even warnings are logged
+                            log(string)
+
                             logString = log("Received:", data);
                         }
 
@@ -333,12 +336,18 @@ Zotero.OCR = new function() {
                 const pageRegex = /Page (\d+) :/
                 let string
             
-                const errorRegex = /Error /
+                // Detect errors but ignore most Leptonica messages
+                // reported by functions such as boxClipToRectangle, pixScanForForeground...
+                // indicating recognition problems on one page or another but no critical tesseract failure.
+                // Based on the function names in Leptonica's src/allheaders.h
+                // using only those that should be specific enough (ca. 2400 matches out of 2750)
+                const errorRegex = /Error(?! in ((bbuffer|bmf|box|ccb|dewarp|dna|fpix|gplot|jb|l_amap|l_aset|l_binary|l_byte|l_clear|l_colorfill|l_convert|l_generate|l_get|l_hash|l_hmap|l_make|l_pdf|l_png|l_product|l_ps|l_rbtree|l_set|l_uncompress|lheap|lqueue|lstack|num|pix|pixacc|pixacomp|pixcmap|pixcomp|pms|projective|pta|ptr|rasterop|rch|recog|sa|sarray|sel|sudoku|wshed)a{0,2}[A-Z0-9]|lept_|l_bootnum))/
                 let errorLog = ''
                 let errorLogOn = false
 
                 while ((string = yield proc.stdout.readString())) {
-                    logString = log("output" + string)
+                    // Display the captured string in the log messages, so that even warnings are logged
+                    logString = log(string)
 
                     if (!errorLogOn) {
                         errorLogOn = string.match(errorRegex)
@@ -353,11 +362,27 @@ Zotero.OCR = new function() {
                         let current = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
                         progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
-                        logString = log("page: " + res[1])
                     }
                 }
 
-                if (errorLogOn) {
+                let {exitCode} = yield proc.wait();
+                log(`\nError code is ${exitCode}`);
+
+                if (errorLogOn || (exitCode !== 0)) {
+                //if (errorLogOn) {
+                    // for logs longer than 24 lines, keep only the head and tail
+                    const maxLogLines = 24;
+                    errorLines = errorLog.split(/\r?\n|\r|\n/g);
+                    if (errorLines.length > maxLogLines) {
+                        let head = errorLines.slice(0, maxLogLines / 2).join('\n');
+                        let tail = errorLines.slice(-maxLogLines / 2).join('\n');
+                        let skippedLines = errorLines.length - maxLogLines;
+                        errorLog = head + `\n...\n[ skipping ${skippedLines} lines ]\n...\n` + tail;
+                    }
+
+                    if (!errorLog) {
+                        errorLog = "An error occurred"
+                    }
                     throw new Error(errorLog)
                 }
 

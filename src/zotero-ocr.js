@@ -251,6 +251,7 @@ ZoteroOCR = {
 
                 let pdf = pdfItem.getFilePath();
                 let base = pdf.replace(/\.pdf$/, '');
+                let basename = pdfItem.attachmentFilename.replace(/\.pdf$/, '');
                 let dir = PathUtils.parent(pdf);
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
                 // TODO filter out PDFs which have already a text layer
@@ -268,17 +269,17 @@ ZoteroOCR = {
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
                     let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
                     let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, PathUtils.join(dir, basename + '-page')];
 
                 } else {
                     imageFormat = "png";
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, PathUtils.join(dir, basename + '-page')];
                 }
 
                 logString = "Extracting pages...";
                 progress.updateMessage(logString);
                 // extract images from PDF
-                let imageList = PathUtils.join(dir, 'image-list.txt');
+                let imageList = PathUtils.join(dir, basename + '-list.txt');
                 let pageCount;
                 if (!(await IOUtils.exists(imageList))) {
                     logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));

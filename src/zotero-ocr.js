@@ -321,15 +321,15 @@ ZoteroOCR = {
 
                     await IOUtils.getChildren(dir).then(
                         (entries) => {
+                            let imgRegexp;
+                            if (imageFormat == "jpg") {
+                                imgRegexp = new RegExp(basename + "-page-\\d+\\.jpg$");
+                            } else {
+                                imgRegexp = new RegExp(basename + "-page-\\d+\\.png$");
+                            }
                             for (const entry of entries) {
-                                if (imageFormat == "jpg") {
-                                    if (entry.match(/-\d+\.jpg$/)) {
-                                        imageListArray.push(entry);
-                                    }
-                                } else {
-                                    if (entry.match(/-\d+\.png$/)) {
-                                        imageListArray.push(entry);
-                                    }
+                                if (entry.match(imgRegexp)) {
+                                    imageListArray.push(entry);
                                 }
                             }
                             // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
@@ -472,7 +472,7 @@ ZoteroOCR = {
                         upperLimit = maximumPagesAsHtml + 1;
                     }
                     for (let i = 1; i < upperLimit; i++) {
-                        let pagename = 'page-' + i + '.html';
+                        let pagename = basename + '-page-' + i + '.html';
                         let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
                         let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                         Zotero.File.putContents(htmlfile, pagecontent);

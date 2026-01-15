@@ -275,7 +275,6 @@ Zotero.OCR = new function() {
                     }
 
                     // save the list of images in a separate file
-                    // TODO 2025-11-27 adapt to new image filenames
                     let info = yield Zotero.File.getContentsAsync(infofile);
                     let numPages = info.match('Pages:[^0-9]+([0-9]+)')[1];
                     var imageListArray = [];
@@ -417,7 +416,7 @@ Zotero.OCR = new function() {
                         upperLimit = maximumPagesAsHtml + 1;
                     }
                     for (let i = 1; i < upperLimit; i++) {
-                        let pagename = 'page-' + i + '.html';
+                        let pagename = basename + '-page-' + i + '.html';
                         let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
                         let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                         Zotero.File.putContents(htmlfile, pagecontent);

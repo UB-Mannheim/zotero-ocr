@@ -202,8 +202,9 @@ Zotero.OCR = new function() {
                 }
                 let pdf = pdfItem.getFilePath();
                 let base = pdf.replace(/\.pdf$/, '');
+                let basename = pdfItem.attachmentFilename.replace(/\.pdf$/, '');
                 let dir = OS.Path.dirname(pdf);
-                let infofile = dir + '/pdfinfo.txt';
+                let infofile = OS.Path.join(dir, 'pdfinfo.txt');
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
                 // TODO filter out PDFs which have already a text layer
 
@@ -220,16 +221,15 @@ Zotero.OCR = new function() {
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
                     let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
                     let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
-
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, OS.Path.join(dir, basename + '-page')];
                 } else {
                     imageFormat = "png";
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, dir + '/page'];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, OS.Path.join(dir, basename + '-page')];
                 }
 
                 progress.updateMessage("Extracting pages...");
                 // extract images from PDF
-                let imageList = OS.Path.join(dir, 'image-list.txt');
+                let imageList = OS.Path.join(dir, basename + '-list.txt');
                 let pageCount;
                 if (!(yield OS.File.exists(imageList))) {
                     let pdfinfoCmdArgs = [pdf, infofile];
@@ -281,9 +281,9 @@ Zotero.OCR = new function() {
                     for (let i = 1; i <= parseInt(numPages, 10); i++) {
                         let paddedIndex = "0".repeat(numPages.length) + i;
                         if (imageFormat == "jpg") {
-                            imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.jpg');
+                            imageListArray.push(OS.Path.join(dir, basename + '-page-' + paddedIndex.substr(-numPages.length) + '.jpg'));
                         } else {
-                            imageListArray.push(dir + '/page-' + paddedIndex.substr(-numPages.length) + '.png');
+                            imageListArray.push(OS.Path.join(dir, basename + '-page-' + paddedIndex.substr(-numPages.length) + '.png'));
                         }
                     }
                     pageCount = imageListArray.length;
@@ -416,7 +416,7 @@ Zotero.OCR = new function() {
                         upperLimit = maximumPagesAsHtml + 1;
                     }
                     for (let i = 1; i < upperLimit; i++) {
-                        let pagename = 'page-' + i + '.html';
+                        let pagename = basename + '-page-' + i + '.html';
                         let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
                         let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                         Zotero.File.putContents(htmlfile, pagecontent);

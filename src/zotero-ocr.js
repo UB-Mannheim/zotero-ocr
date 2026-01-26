@@ -164,6 +164,12 @@ ZoteroOCR = {
             // If it is found, the settings are updated.
             // Otherwise the last possible location is returned.
             let externalCmd = Zotero.Prefs.get(exePref);
+            // First of all, emove unncessary quotes from Windows paths
+            if (externalCmd.match(/"/g)) {
+                let unquotedCmd = externalCmd.replace(/"/g, '');
+                Zotero.Prefs.set(exePref, unquotedCmd);
+                externalCmd = unquotedCmd;
+            }
             let externalCmdFound = false;
             if (!externalCmd) {
                 // look for externalCmd in various possible directories

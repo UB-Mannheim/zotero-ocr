@@ -3,9 +3,9 @@
     "zotero-ocr@bib.uni-mannheim.de": {
       "updates": [
         {
-          "version": "0.9.3",
-          "update_link": "https://github.com/UB-Mannheim/zotero-ocr/releases/download/0.9.3/zotero-ocr-0.9.3.xpi",
-          "update_hash": "sha256:8a01c4b8916726cf1f2419ff9e79a644cc79f791172be6b2eeccd7674c4320ac",
+          "version": "0.9.4",
+          "update_link": "https://github.com/UB-Mannheim/zotero-ocr/releases/download/0.9.4/zotero-ocr-0.9.4.xpi",
+          "update_hash": "sha256:23de1d7ea751ec83de6237fe7380224d5f211538a43ffcb88f5de2806903decc",
           "applications": {
             "gecko": {
               "strict_min_version": "60.0"

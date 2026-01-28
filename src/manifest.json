@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Zotero OCR",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Zotero Plugin for OCR",
   "author": "Philipp Zumstein",
   "homepage_url": "https://github.com/UB-Mannheim/zotero-ocr",

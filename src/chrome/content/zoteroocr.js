@@ -112,6 +112,7 @@ Zotero.OCR = new function() {
                 externalCmd = unquotedCmd;
             }
             let externalCmdFound = false;
+            // look for externalCmd in various possible directories
             if (!externalCmd) {
                 for (externalCmd of possiblePath) {
                     log("will try to locate " + externalCmd);

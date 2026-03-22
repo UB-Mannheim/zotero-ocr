@@ -256,10 +256,17 @@ ZoteroOCR = {
                 }
 
                 let pdf = pdfItem.getFilePath();
-                let base = pdf.replace(/\.pdf$/, '');
-                let basename = pdfItem.attachmentFilename.replace(/\.pdf$/, '');
+                // let base = pdf.replace(/\.pdf$/, '');
+                let baseKey = pdfItem.key;
+                // FIXME this returns undefimed, why?
+                let baseTitle = Zotero.Items.get(pdfItem.parentItemID).title;
+                log(baseTitle);
                 let dir = PathUtils.parent(pdf);
-                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
+                let baseFilename = PathUtils.filename(pdf).replace(/\.pdf$/, '')
+                // TODO is the directory useful anymore? Hopefully not.
+                // let absolutePathWithKey = PathUtils.join(dir, baseKey);
+                // TODO what should ocrbasee be if we overwrite the original PDF, exactly? just the PDF filename without extension
+                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
                 // TODO filter out PDFs which have already a text layer
 
                 // build the pdftoppm arguments based on hidden preferences:
@@ -275,22 +282,24 @@ ZoteroOCR = {
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
                     let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
                     let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, PathUtils.join(dir, basename + '-page')];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
 
                 } else {
                     imageFormat = "png";
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, PathUtils.join(dir, basename + '-page')];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 }
 
                 logString = "Extracting pages...";
                 progress.updateMessage(logString);
                 // extract images from PDF
-                let imageList = PathUtils.join(dir, basename + '-list.txt');
+                let imageList = PathUtils.join(dir, baseKey + '-list.txt');
+                // let imageList = baseKey + '-list.txt'
                 let pageCount;
                 if (!(await IOUtils.exists(imageList))) {
                     logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
                     let proc = await Subprocess.call({
                         command: pdftoppm,
+                        workdir: dir,
                         arguments: pdftoppmCmdArgs,
                         stderr: "stdout"
                     })
@@ -329,13 +338,13 @@ ZoteroOCR = {
                         (entries) => {
                             let imgRegexp;
                             if (imageFormat == "jpg") {
-                                imgRegexp = new RegExp(basename + "-page-\\d+\\.jpg$");
+                                imgRegexp = new RegExp(baseKey + "-page-\\d+\\.jpg$");
                             } else {
-                                imgRegexp = new RegExp(basename + "-page-\\d+\\.png$");
+                                imgRegexp = new RegExp(baseKey + "-page-\\d+\\.png$");
                             }
                             for (const entry of entries) {
                                 if (entry.match(imgRegexp)) {
-                                    imageListArray.push(entry);
+                                    imageListArray.push(PathUtils.filename(entry));
                                 }
                             }
                             // IOUtils.getChildren() is not guaranteed to return files in alphanumerical order
@@ -390,6 +399,7 @@ ZoteroOCR = {
 
                 let proc = await Subprocess.call({
                     command: ocrEngine,
+                    workdir: dir,
                     arguments: parameters,
                     stderr: "stdout"
                 })
@@ -434,7 +444,7 @@ ZoteroOCR = {
                 //if (errorLogOn) {
                     // for logs longer than 24 lines, keep only the head and tail
                     const maxLogLines = 24;
-                    errorLines = errorLog.split(/\r?\n|\r|\n/g);
+                    let errorLines = errorLog.split(/\r?\n|\r|\n/g);
                     if (errorLines.length > maxLogLines) {
                         let head = errorLines.slice(0, maxLogLines / 2).join('\n');
                         let tail = errorLines.slice(-maxLogLines / 2).join('\n');
@@ -452,7 +462,7 @@ ZoteroOCR = {
                 progress.updateMessage(logString);
 
                 if (Zotero.Prefs.get("zoteroocr.outputNote")) {
-                    let contents = await Zotero.File.getContentsAsync(ocrbase + '.txt');
+                    let contents = await Zotero.File.getContentsAsync(PathUtils.join(dir, ocrbase + '.txt'));
                     contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
                     let newNote = new Zotero.Item('note');
                     newNote.setNote(contents);
@@ -462,7 +472,7 @@ ZoteroOCR = {
                 }
 
                 if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
-                    let contents = await Zotero.File.getContentsAsync(ocrbase + '.hocr');
+                    let contents = await Zotero.File.getContentsAsync(PathUtils.join(dir, ocrbase + '.hocr'));
                     // replace the absolute paths of images with relative ones
                     let escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     let regexp = new RegExp(escapedDir + "/", 'g');
@@ -478,24 +488,27 @@ ZoteroOCR = {
                         upperLimit = maximumPagesAsHtml + 1;
                     }
                     for (let i = 1; i < upperLimit; i++) {
-                        let pagename = basename + '-page-' + i + '.html';
-                        let htmlfile = Zotero.File.pathToFile(PathUtils.join(dir, pagename));
+                        let pagename = baseKey + '-page-' + i + '.html';
+                        let absolutePagename = PathUtils.join(dir, pagename);
+                        let htmlfile = Zotero.File.pathToFile(absolutePagename);
                         let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                         Zotero.File.putContents(htmlfile, pagecontent);
                         // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
                         if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                             await Zotero.Attachments.importFromFile({
-                                file: PathUtils.join(dir, pagename),
+                                file: absolutePagename,
                                 contentType: "text/html",
                                 libraryID: item.libraryID,
                                 parentItemID: item.id,
+                                title: 'page-' + i + '.html'
                             });
-                            await Zotero.File.removeIfExists(PathUtils.join(dir, pagename));
+                            await Zotero.File.removeIfExists(absolutePagename);
                         } else {
                             await Zotero.Attachments.linkFromFile({
-                                file: PathUtils.join(dir, pagename),
+                                file: absolutePagename,
                                 contentType: "text/html",
-                                parentItemID: item.id
+                                parentItemID: item.id,
+                                title: 'page-' + i + '.html'
                             });
                         }
                     }
@@ -506,25 +519,27 @@ ZoteroOCR = {
                     // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
                     if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                         await Zotero.Attachments.importFromFile({
-                            file: ocrbase + '.pdf',
+                            file: PathUtils.join(dir, ocrbase + '.pdf'),
                             libraryID: item.libraryID,
                             parentItemID: item.id,
+                            title: 'PDF.ocr'
                         });
-                        await Zotero.File.removeIfExists(ocrbase + '.pdf');
+                        await Zotero.File.removeIfExists(PathUtils.join(dir, ocrbase + '.pdf'));
                     } else {
                         await Zotero.Attachments.linkFromFile({
-                            file: ocrbase + '.pdf',
-                            parentItemID: item.id
+                            file: PathUtils.join(dir, ocrbase + '.pdf'),
+                            parentItemID: item.id,
+                            title: 'PDF.ocr'
                         });
                     }
                 }
 
                 if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
                     // delete image list
-                    await Zotero.File.removeIfExists(imageList);
+                    await Zotero.File.removeIfExists(PathUtils.join(dir, imageList));
                     // delete PNGs
                     for (let imageName of imageListArray) {
-                        await Zotero.File.removeIfExists(imageName);
+                        await Zotero.File.removeIfExists(PathUtils.join(dir, imageName));
                     }
                 }
             }

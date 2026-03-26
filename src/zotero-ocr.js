@@ -256,18 +256,11 @@ ZoteroOCR = {
                 }
 
                 let pdf = pdfItem.getFilePath();
-                // let base = pdf.replace(/\.pdf$/, '');
                 let baseKey = pdfItem.key;
-                // FIXME this returns undefimed, why?
                 let baseTitle = Zotero.Items.get(pdfItem.parentItemID).title;
-                log(baseTitle);
                 let dir = PathUtils.parent(pdf);
                 let baseFilename = PathUtils.filename(pdf).replace(/\.pdf$/, '')
-                // TODO is the directory useful anymore? Hopefully not.
-                // let absolutePathWithKey = PathUtils.join(dir, baseKey);
-                // TODO what should ocrbasee be if we overwrite the original PDF, exactly? just the PDF filename without extension
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
-                // TODO filter out PDFs which have already a text layer
 
                 // build the pdftoppm arguments based on hidden preferences:
                 // => will produce a PDF output with reasonable size and image quality
@@ -522,14 +515,14 @@ ZoteroOCR = {
                             file: PathUtils.join(dir, ocrbase + '.pdf'),
                             libraryID: item.libraryID,
                             parentItemID: item.id,
-                            title: 'PDF.ocr'
+                            title: baseTitle + '.ocr'
                         });
                         await Zotero.File.removeIfExists(PathUtils.join(dir, ocrbase + '.pdf'));
                     } else {
                         await Zotero.Attachments.linkFromFile({
                             file: PathUtils.join(dir, ocrbase + '.pdf'),
                             parentItemID: item.id,
-                            title: 'PDF.ocr'
+                            title: baseTitle + '.ocr'
                         });
                     }
                 }

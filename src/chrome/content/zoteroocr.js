@@ -208,12 +208,14 @@ Zotero.OCR = new function() {
                     pdfItem = pdfAttachments[0];
                 }
                 let pdf = pdfItem.getFilePath();
-                let base = pdf.replace(/\.pdf$/, '');
-                let basename = pdfItem.attachmentFilename.replace(/\.pdf$/, '');
+                let baseKey = pdfItem.key;
+                let baseTitle = pdfItem.getDisplayTitle();
                 let dir = OS.Path.dirname(pdf);
                 let infofile = OS.Path.join(dir, 'pdfinfo.txt');
-                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? base : base + '.ocr';
-                // TODO filter out PDFs which have already a text layer
+                // CHECK is this the right PathUtils.filename() equivalent for Zotero6
+                let baseFilename = OS.Path.basename(pdf).replace(/\.pdf$/, '')
+                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
+                // TODO filter out PDFs which have already a text layer ?
 
                 // build the pdftoppm arguments based on hidden preferences:
                 // => will produce a PDF output with reasonable size and image quality
@@ -227,16 +229,16 @@ Zotero.OCR = new function() {
                     imageFormat = "jpg";
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
                     let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
-                    let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, OS.Path.join(dir, basename + '-page')];
+                    let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");                    
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 } else {
                     imageFormat = "png";
-                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, OS.Path.join(dir, basename + '-page')];
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 }
 
                 progress.updateMessage("Extracting pages...");
                 // extract images from PDF
-                let imageList = OS.Path.join(dir, basename + '-list.txt');
+                let imageList = OS.Path.join(dir, baseKey + '-list.txt');
                 let pageCount;
                 if (!(yield OS.File.exists(imageList))) {
                     let pdfinfoCmdArgs = [pdf, infofile];
@@ -246,6 +248,7 @@ Zotero.OCR = new function() {
                     try {
                         let proc1 = yield Subprocess.call({
                             command: pdfinfo,
+                            workdir: dir,
                             arguments: pdfinfoCmdArgs
                         });
 
@@ -264,6 +267,7 @@ Zotero.OCR = new function() {
                     try {
                         let proc2 = yield Subprocess.call({
                             command: pdftoppm,
+                            workdir: dir,
                             arguments: pdftoppmCmdArgs,
                             stderr: "stdout"
                         });
@@ -288,9 +292,9 @@ Zotero.OCR = new function() {
                     for (let i = 1; i <= parseInt(numPages, 10); i++) {
                         let paddedIndex = "0".repeat(numPages.length) + i;
                         if (imageFormat == "jpg") {
-                            imageListArray.push(OS.Path.join(dir, basename + '-page-' + paddedIndex.substr(-numPages.length) + '.jpg'));
+                            imageListArray.push(OS.Path.join(dir, baseKey + '-page-' + paddedIndex.substr(-numPages.length) + '.jpg'));
                         } else {
-                            imageListArray.push(OS.Path.join(dir, basename + '-page-' + paddedIndex.substr(-numPages.length) + '.png'));
+                            imageListArray.push(OS.Path.join(dir, baseKey + '-page-' + paddedIndex.substr(-numPages.length) + '.png'));
                         }
                     }
                     pageCount = imageListArray.length;
@@ -336,6 +340,7 @@ Zotero.OCR = new function() {
                 logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
                 let proc = yield Subprocess.call({
                     command: ocrEngine,
+                    workdir: dir,
                     arguments: parameters,
                     stderr: "stdout"
                 })
@@ -379,7 +384,7 @@ Zotero.OCR = new function() {
                 //if (errorLogOn) {
                     // for logs longer than 24 lines, keep only the head and tail
                     const maxLogLines = 24;
-                    errorLines = errorLog.split(/\r?\n|\r|\n/g);
+                    let errorLines = errorLog.split(/\r?\n|\r|\n/g);
                     if (errorLines.length > maxLogLines) {
                         let head = errorLines.slice(0, maxLogLines / 2).join('\n');
                         let tail = errorLines.slice(-maxLogLines / 2).join('\n');
@@ -397,7 +402,7 @@ Zotero.OCR = new function() {
                 progress.updateMessage(logString);
 
                 if (Zotero.Prefs.get("zoteroocr.outputNote")) {
-                    let contents = yield Zotero.File.getContentsAsync(ocrbase + '.txt');
+                    let contents = yield Zotero.File.getContentsAsync(OS.Path.join(dir, ocrbase + '.txt'));
                     contents = contents.replace(/(?:\r\n|\r|\n)/g, '<br />');
                     let newNote = new Zotero.Item('note');
                     newNote.setNote(contents);
@@ -407,7 +412,7 @@ Zotero.OCR = new function() {
                 }
 
                 if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
-                    let contents = yield Zotero.File.getContentsAsync(ocrbase + '.hocr');
+                    let contents = yield Zotero.File.getContentsAsync(OS.Path.join(dir, ocrbase + '.hocr'));
                     // replace the absolute paths of images with relative ones
                     let escapedDir = dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     let regexp = new RegExp(escapedDir + "/", 'g');
@@ -423,24 +428,27 @@ Zotero.OCR = new function() {
                         upperLimit = maximumPagesAsHtml + 1;
                     }
                     for (let i = 1; i < upperLimit; i++) {
-                        let pagename = basename + '-page-' + i + '.html';
-                        let htmlfile = Zotero.File.pathToFile(OS.Path.join(dir, pagename));
+                        let pagename = baseKey + '-page-' + i + '.html';
+                        let absolutePagename = OS.Path.join(dir, pagename);
+                        let htmlfile = Zotero.File.pathToFile(absolutePagename);
                         let pagecontent = preamble + "<div class='ocr_page'" + parts[i] + '<script src="https://unpkg.com/hocrjs"></script>\n</body>\n</html>';
                         Zotero.File.putContents(htmlfile, pagecontent);
                         // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
                         if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                             yield Zotero.Attachments.importFromFile({
-                                file: OS.Path.join(dir, pagename),
+                                file: absolutePagename,
                                 contentType: "text/html",
                                 libraryID: item.libraryID,
                                 parentItemID: item.id,
+                                title: 'page-' + i + '.html'
                             });
-                            yield Zotero.File.removeIfExists(OS.Path.join(dir, pagename));
+                            yield Zotero.File.removeIfExists(absolutePagename);
                         } else {
                             yield Zotero.Attachments.linkFromFile({
-                                file: OS.Path.join(dir, pagename),
+                                file: absolutePagename,
                                 contentType: "text/html",
-                                parentItemID: item.id
+                                parentItemID: item.id,
+                                title: 'page-' + i + '.html'
                             });
                         }
                     }
@@ -449,17 +457,20 @@ Zotero.OCR = new function() {
                 // attach PDF if it is a new one
                 if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
                     // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                    let absolutePdfFilename = OS.Path.join(dir, ocrbase + '.pdf');
                     if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                         yield Zotero.Attachments.importFromFile({
-                            file: ocrbase + '.pdf',
+                            file: absolutePdfFilename,
                             libraryID: item.libraryID,
                             parentItemID: item.id,
+                            title: baseTitle + '.ocr'
                         });
-                        yield Zotero.File.removeIfExists(ocrbase + '.pdf');
+                        yield Zotero.File.removeIfExists(absolutePdfFilename);
                     } else {
                         yield Zotero.Attachments.linkFromFile({
-                            file: ocrbase + '.pdf',
-                            parentItemID: item.id
+                            file: absolutePdfFilename,
+                            parentItemID: item.id,
+                            title: baseTitle + '.ocr'
                         });
                     }
                 }

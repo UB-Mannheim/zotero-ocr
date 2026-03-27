@@ -257,10 +257,11 @@ ZoteroOCR = {
 
                 let pdf = pdfItem.getFilePath();
                 let baseKey = pdfItem.key;
-                let baseTitle = Zotero.Items.get(pdfItem.parentItemID).title;
+                let baseTitle = pdfItem.getDisplayTitle();
                 let dir = PathUtils.parent(pdf);
                 let baseFilename = PathUtils.filename(pdf).replace(/\.pdf$/, '')
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
+                // TODO filter out PDFs which have already a text layer ?
 
                 // build the pdftoppm arguments based on hidden preferences:
                 // => will produce a PDF output with reasonable size and image quality
@@ -276,7 +277,6 @@ ZoteroOCR = {
                     let jpegProgressive = Zotero.Prefs.get("zoteroocr.jpegProgressive");
                     let jpegOptimization = Zotero.Prefs.get("zoteroocr.jpegOptimization");
                     pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-jpeg', '-jpegopt', 'quality=' + jpegQuality + ',progressive=' + jpegProgressive + ',optimize=' + jpegOptimization, '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
-
                 } else {
                     imageFormat = "png";
                     pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
@@ -286,7 +286,6 @@ ZoteroOCR = {
                 progress.updateMessage(logString);
                 // extract images from PDF
                 let imageList = PathUtils.join(dir, baseKey + '-list.txt');
-                // let imageList = baseKey + '-list.txt'
                 let pageCount;
                 if (!(await IOUtils.exists(imageList))) {
                     logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
@@ -510,17 +509,18 @@ ZoteroOCR = {
                 // attach PDF if it is a new one
                 if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
                     // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                    let absolutePdfFilename = PathUtils.join(dir, ocrbase + '.pdf');
                     if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
                         await Zotero.Attachments.importFromFile({
-                            file: PathUtils.join(dir, ocrbase + '.pdf'),
+                            file: absolutePdfFilename,
                             libraryID: item.libraryID,
                             parentItemID: item.id,
                             title: baseTitle + '.ocr'
                         });
-                        await Zotero.File.removeIfExists(PathUtils.join(dir, ocrbase + '.pdf'));
+                        await Zotero.File.removeIfExists(absolutePdfFilename);
                     } else {
                         await Zotero.Attachments.linkFromFile({
-                            file: PathUtils.join(dir, ocrbase + '.pdf'),
+                            file: absolutePdfFilename,
                             parentItemID: item.id,
                             title: baseTitle + '.ocr'
                         });

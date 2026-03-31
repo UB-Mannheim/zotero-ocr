@@ -212,7 +212,6 @@ Zotero.OCR = new function() {
                 let baseTitle = pdfItem.getDisplayTitle();
                 let dir = OS.Path.dirname(pdf);
                 let infofile = OS.Path.join(dir, 'pdfinfo.txt');
-                // CHECK is this the right PathUtils.filename() equivalent for Zotero6
                 let baseFilename = OS.Path.basename(pdf).replace(/\.pdf$/, '')
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
                 // TODO filter out PDFs which have already a text layer ?

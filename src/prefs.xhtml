@@ -1,22 +1,47 @@
    <vbox>
         <groupbox>
-            <caption label="OCR parameters"/>
+            <caption label="Tesseract"/>
             <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
             <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
-            <label value="Full location of the pdftoppm executable:"/>
-            <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>
             </hbox>
             <hbox>
+                <label value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
+                <html:input type="text" id="pref-zoteroocr-psmmode-value" preference="extensions.zotero.zoteroocr.psmmode" width="30"/>
+            </hbox>
+            <hbox>
+                <label value="Tesseract OCR Engine Mode (OEM) - integer from 0 to 3 (inclusive)"/>
+                <html:input type="text" id="pref-zoteroocr-oemmode-value" preference="extensions.zotero.zoteroocr.oemmode" width="30"/>
+            </hbox>
+            <hbox>
+                <label value="Additional Tesseract arguments (advanced, optional):"/>
+                <html:input type="text" id="pref-zoteroocr-extraArgs-value" flex="1" preference="extensions.zotero.zoteroocr.extraArgs"/>
+            </hbox>
+        </groupbox>
+        <groupbox>
+            <caption label="pdftoppm"/>
+            <label value="Full location of the pdftoppm executable:"/>
+            <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
+            <hbox>
                 <label value="Output pdf dpi (default is 300):"/>
                 <html:input type="text" id="pref-zoteroocr-outputdpi-value" preference="extensions.zotero.zoteroocr.outputDPI" width="60"/>
             </hbox>
             <hbox>
-                <label value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
-                <html:input type="text" id="pref-zoteroocr-psmmode-value" preference="extensions.zotero.zoteroocr.psmmode" width="30"/>
+                <label value="Intermediate image format (png or jpg):"/>
+                <html:input type="text" id="pref-zoteroocr-imageFormat-value" preference="extensions.zotero.zoteroocr.imageFormat" width="60"/>
             </hbox>
+            <hbox>
+                <label value="JPEG quality (only used when image format is jpg):"/>
+                <html:input type="text" id="pref-zoteroocr-jpegQuality-value" preference="extensions.zotero.zoteroocr.jpegQuality" width="60"/>
+            </hbox>
+        </groupbox>
+        <groupbox>
+            <caption label="ImageMagick preprocessing"/>
+            <label value="Full location of the ImageMagick executable (optional):"/>
+            <html:input type="text" id="pref-zoteroocr-magickPath-value" flex="1" preference="extensions.zotero.zoteroocr.magickPath"/>
+            <checkbox preference="extensions.zotero.zoteroocr.preprocessImages" label="Preprocess rendered page images with ImageMagick before OCR"/>
         </groupbox>
         <groupbox>
             <caption label="Output options"/>

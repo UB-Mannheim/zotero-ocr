@@ -11,6 +11,19 @@ function log(msg) {
     return message;
 }
 
+function parseExtraArgs(input) {
+    if (!input) return [];
+    let args = [];
+    let regex = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+        let token = match[1] ?? match[2] ?? match[3] ?? '';
+        token = token.replace(/\\(["'\\])/g, '$1');
+        if (token) args.push(token);
+    }
+    return args;
+}
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     try {
         // Create a progress window using Zotero's API
@@ -162,6 +175,16 @@ Zotero.OCR = new function() {
                 return;
             }
 
+            let magick = Zotero.Prefs.get("zoteroocr.magickPath") || "";
+            if (Zotero.Prefs.get("zoteroocr.preprocessImages")) {
+                let magickPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+                magick = yield checkExternalCmd("magick", "zoteroocr.magickPath", magickPaths);
+                if (!(yield OS.File.exists(magick))) {
+                    window.alert("Image preprocessing is enabled, but no ImageMagick executable found, last check: " + magick);
+                    return;
+                }
+            }
+
             // Use the special pdfinfo variant in the zotero directory (which comes along Zotero)
             // See https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Code_snippets/File_I_O#Getting_special_files
             // and https://dxr.mozilla.org/mozilla-central/source/xpcom/io/nsDirectoryServiceDefs.h.
@@ -220,7 +243,7 @@ Zotero.OCR = new function() {
                 // => will produce a PDF output with reasonable size and image quality
                 // File format: JPEG by default instead of PNG
                 // JPEG quality 70/100 (pdftoppm default is 75)
-                // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
+                // JPEG Huffman tables optimization: yes (pdftoppm default is no)
                 // Use progressive JPEG: yes (pdftoppm default is no)
                 let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
                 let pdftoppmCmdArgs = ['-progress'];
@@ -305,7 +328,56 @@ Zotero.OCR = new function() {
                     pageCount = lines.length - 1
                 }
 
-                let parameters = [imageList];
+                let processedImages = [];
+                let processedList = null;
+                let tesseractInputList = imageList;
+                if (Zotero.Prefs.get("zoteroocr.preprocessImages")) {
+                    progress.updateMessage("Preprocessing images...");
+                    processedList = OS.Path.join(dir, baseKey + '-processed-list.txt');
+                    let sourceImages = imageListArray;
+                    if (!sourceImages) {
+                        let buffer = yield Zotero.File.getContentsAsync(imageList);
+                        sourceImages = buffer.split(/\r?\n/).filter(Boolean);
+                    }
+
+                    for (let imageName of sourceImages) {
+                        let sourceImage = OS.Path.isAbsolute(imageName) ? imageName : OS.Path.join(dir, imageName);
+                        let processedImage = sourceImage.replace(/\.(jpg|png)$/i, '.processed.png');
+                        let magickArgs = [
+                            sourceImage,
+                            '-colorspace', 'Gray',
+                            '-auto-level',
+                            '-deskew', '40%',
+                            '-sharpen', '0x1',
+                            '-define', 'png:color-type=0',
+                            '-threshold', '55%',
+                            processedImage
+                        ];
+                        logString = log("Running " + magick + ' ' + magickArgs.join(' '));
+                        let procMagick = yield Subprocess.call({
+                            command: magick,
+                            workdir: dir,
+                            arguments: magickArgs,
+                            stderr: "stdout"
+                        });
+                        let magickOutput = '';
+                        let magickLine;
+                        while ((magickLine = yield procMagick.stdout.readString())) {
+                            magickOutput += magickLine;
+                            logString = log(magickLine);
+                        }
+                        let { exitCode: magickExitCode } = yield procMagick.wait();
+                        if (magickExitCode !== 0) {
+                            throw new Error("ImageMagick preprocessing failed: " + magickOutput);
+                        }
+                        processedImages.push(processedImage);
+                    }
+
+                    Zotero.File.putContents(Zotero.File.pathToFile(processedList), processedImages.join('\n'));
+                    tesseractInputList = processedList;
+                }
+
+                let parameters = [tesseractInputList];
                 parameters.push(ocrbase);
 
                 parameters.push('--psm');
@@ -319,6 +391,15 @@ Zotero.OCR = new function() {
                 }
                 parameters.push(PSMMode);
 
+                parameters.push('--oem');
+                const validOEMModes = ["0", "1", "2", "3"];
+                let OEMMode = Zotero.Prefs.get("zoteroocr.oemmode");
+                if (validOEMModes.indexOf(OEMMode) < 0) {
+                    OEMMode = "1";
+                    Zotero.Prefs.set("zoteroocr.oemmode", OEMMode);
+                }
+                parameters.push(OEMMode);
+
                 let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
                 // Convert existing instances with older or buggy defaults to English
                 if (!ocrLanguage || ocrLanguage === 'undefined') {
@@ -327,6 +408,11 @@ Zotero.OCR = new function() {
                 }
                 parameters.push('-l');
                 parameters.push(ocrLanguage);
+
+                let extraArgs = parseExtraArgs(Zotero.Prefs.get("zoteroocr.extraArgs") || "");
+                for (let arg of extraArgs) {
+                    parameters.push(arg);
+                }
                 parameters.push('txt');
                 if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
                     parameters.push('pdf');
@@ -475,10 +561,17 @@ Zotero.OCR = new function() {
                 }
 
                 if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
-                    // delete image list
+                    // delete original image list
                     yield Zotero.File.removeIfExists(imageList);
-                    // delete PNGs
+                    // delete original images
                     for (let imageName of imageListArray) {
+                        yield Zotero.File.removeIfExists(imageName);
+                    }
+                    // delete processed image list and images
+                    if (processedList) {
+                        yield Zotero.File.removeIfExists(processedList);
+                    }
+                    for (let imageName of processedImages) {
                         yield Zotero.File.removeIfExists(imageName);
                     }
                 }

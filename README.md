@@ -52,7 +52,13 @@ The default language/script to use with Tesseract, can only be one of the instal
 The user may:
 * modify the output DPI (by default: 300)
 * modify the Tesseract Page Segmentation Mode (PSM). There are many PSM options one may want to utilize when running Tesseract (see https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html)
+* modify the Tesseract OCR Engine Mode (OEM)
+* choose the intermediate image format used before OCR (PNG by default, JPEG optional)
+* adjust JPEG quality if JPEG is used for intermediate images
+* pass additional optional Tesseract command-line arguments for advanced use cases
 * choose to add the new PDFs as normal attachments or as linked files. Starting with Zotero-OCR 0.8.0, the default is normal attachments, due to some drawbacks with linked files (not possible in group libraries, unwanted files remaining when a user moves attachments to the Trash...).
+
+Advanced users may also optionally preprocess rendered page images with ImageMagick before OCR. This can improve OCR quality on difficult scans. The path to the `magick` executable can be configured in the Zotero OCR preferences. Additional optional Tesseract arguments can also be passed through the preferences UI, for example `-c preserve_interword_spaces=1`.
 
 
 ![Zotero OCR Preferences](./screenshots/Zotero-OCR-Preferences.png)

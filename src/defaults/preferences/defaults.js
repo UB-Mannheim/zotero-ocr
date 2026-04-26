@@ -7,11 +7,14 @@ pref("extensions.zotero.zoteroocr.outputHocr", true);
 pref("extensions.zotero.zoteroocr.outputPNG", true);
 pref("extensions.zotero.zoteroocr.maximumPagesAsHtml", "5");
 pref("extensions.zotero.zoteroocr.outputDPI", "300");
+pref("extensions.zotero.zoteroocr.oemmode", "1");
 pref("extensions.zotero.zoteroocr.psmmode", "3");
 pref("extensions.zotero.zoteroocr.outputAsCopyAttachment", true);
 // Hidden pdftoppm preferences
-pref("extensions.zotero.zoteroocr.imageFormat", "jpg");
+pref("extensions.zotero.zoteroocr.imageFormat", "png");
 pref("extensions.zotero.zoteroocr.jpegQuality", "70");
 pref("extensions.zotero.zoteroocr.jpegProgressive", "y");
 pref("extensions.zotero.zoteroocr.jpegOptimization", "y");
-
+pref("extensions.zotero.zoteroocr.magickPath", "");
+pref("extensions.zotero.zoteroocr.preprocessImages", false);
+pref("extensions.zotero.zoteroocr.extraArgs", "");

@@ -1,7 +1,7 @@
 // zotero-ocr.js
 
 // More information about the modules at https://searchfox.org/mozilla-central/source/dom/chrome-webidl
-if (Zotero.version >= "8") {
+if (Zotero.version >= "8" || Zotero.version >= "10") {
     ChromeUtils.importESModule("resource://gre/modules/FileUtils.sys.mjs");
     ChromeUtils.defineESModuleGetters(globalThis, {
         Subprocess: "resource://gre/modules/Subprocess.sys.mjs",

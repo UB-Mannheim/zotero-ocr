@@ -527,9 +527,9 @@ ZoteroOCR = {
                     }
                 }
 
-                if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray) {
+                if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray.length) {
                     // delete image list
-                    await Zotero.File.removeIfExists(PathUtils.join(dir, imageList));
+                    await Zotero.File.removeIfExists(PathUtils.join(imageList));
                     // delete PNGs
                     for (let imageName of imageListArray) {
                         await Zotero.File.removeIfExists(PathUtils.join(dir, imageName));

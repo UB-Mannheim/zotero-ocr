@@ -20,10 +20,14 @@ Tesseract OCR is used for the text recognition itself.
 
 Zotero must be installed using one of the officially supported methods https://www.zotero.org/support/installation#how_do_i_install_zotero. Flatpak/Snap/Appimage and similar set-ups are not supported: Zotero-OCR will not work with them in general, as such architectures prevent it from accessing the tesseract and pdftoppm tools. Skilled users might get them to work on their own machines but we cannot help with that.
 
+For Arch Linux users, a package that sets up the plugin and all prerequisites is maintained by [a third party](https://github.com/cphyc). To install, just run 
+```yay -S zotero-extension-ocr```
+See https://aur.archlinux.org/packages/zotero-extension-ocr for more details. Note that problems with the installation should be reported to the package developer.
+
 
 ## Installation
 
-To install the extension:
+General instructions to install the extension:
 
 1. Download the XPI file of the [latest release](https://github.com/UB-Mannheim/zotero-ocr/releases).
 2. Install the XPI depending on your Zotero version:

@@ -1,6 +1,6 @@
    <vbox>
         <groupbox>
-            <html:h2>OCR parameters</html:h2>
+            <label><html:h2>OCR parameters</html:h2></label>
             <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
             <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
             <label value="Full location of the pdftoppm executable:"/>
@@ -19,7 +19,7 @@
             </hbox>
         </groupbox>
         <groupbox>
-            <html:h2>Output options</html:h2>
+            <label><html:h2>Output options</html:h2></label>
             <checkbox preference="extensions.zotero.zoteroocr.outputNote" label="Save output as a note"/>
             <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" label="Save output as a PDF with text layer" oncommand="document.getElementById('checkbox-zoteroocr-overwrite-pdf').disabled = !document.getElementById('checkbox-zoteroocr-output-pdf').checked"/>
             <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="extensions.zotero.zoteroocr.overwritePDF" label="Overwrite the initial PDF with the output" class="indented-pref"/>
@@ -33,7 +33,7 @@
             <checkbox preference="extensions.zotero.zoteroocr.outputAsCopyAttachment" label="Import the resulting PDF as a copy instead of as a file link"/>
         </groupbox>
         <groupbox>
-            <caption label="Advanced settings"/>
+            <label><html:h2>Advanced settings</html:h2></label>
             <hbox class="indented-pref">
                 <label><!-- The Checkbox Trigger -->
                     <html:input type="checkbox" id="toggle-element" class="toggle-trigger"/>

@@ -14,7 +14,8 @@ async function startup({ id, version, rootURI }) {
 	Zotero.PreferencePanes.register({
 		image: 'chrome/skin/default/zoteroocr/ocr-symbol.svg',
 		pluginID: 'zotero-ocr@bib.uni-mannheim.de',
-		src: rootURI + 'prefs.xhtml'
+		src: rootURI + 'prefs.xhtml',
+		stylesheets: ['prefs.css']
 	});
 
 	Services.scriptloader.loadSubScript(rootURI + 'zotero-ocr.js');

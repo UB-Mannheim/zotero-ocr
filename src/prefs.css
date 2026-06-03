@@ -1,0 +1,132 @@
+groupbox.mdbc-pref-section-box {
+  border: 2px solid black;
+  border-radius: 10px;
+  padding-bottom: 10px;
+  width: 100%;
+  max-width: fit-content;
+}
+
+caption.mdbc-pref-section-title {
+  padding: 15px 0 5px 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+label.mdbc-pref-subsection-title {
+  padding: 15px 0 1px 10px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+radio.mdbc-pref-radio-main {
+  padding: 18px 0 1px 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+div.mdbc-pref-options-div {
+  background-color: #e5e5e5;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  margin-left: 5px;
+  margin-right: 5px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: fit-content;
+}
+
+/* Dark theme font color */
+@media (prefers-color-scheme: dark) {
+  div.mdbc-pref-options-div {
+    background-color: #212121;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+hbox.mdbc-pref-hbox-indent {
+  display: inline-flex;
+  flex-wrap: nowrap; /* Prevents flex items from wrapping */
+  overflow: visible; /* Makes overflow content visible */
+  align-items: center; /* Vertically centers the items in the line */
+  justify-content: space-between; /* Puts space before the first and after the last item, but not between items */
+  /*display: -moz-inline-box;*/
+  /*display: -webkit-inline-box;*/
+  padding-left: 10px;
+  width: 100%;
+  white-space: pre;
+  max-width: 100%;
+}
+
+.mdbc-pref-explication-minor {
+  font-size: 11px;
+}
+
+hr.mdbc-pref-hr {
+  border: 2px solid darkslategrey;
+  margin-top: 10px;
+  opacity: 20%;
+  border-radius: 5px;
+}
+
+input.mdbc-pref-textbox-flex1 {
+/*  -moz-box-flex: 1;*/
+width: 100%;
+}
+
+/*input.mdbc-pref-textbox-fullwidth {*/
+/*  width: 100%;*/
+/*}*/
+
+input[type='text'].mdbc-pref-textbox-partialwidth {
+  min-width: 80px;
+  width: 100px;
+  /*-moz-box-flex: 1;*/
+  /*width: 100%;*/
+  flex-grow: 3; /* Make the input expand */
+  margin-left: 0;
+  margin-right: 0;
+  font-family: monospace;
+}
+
+.mdbc-pref-text-center {
+  text-align: center;
+}
+
+.mdbc-pref-width-full {
+  width: 100%;
+}
+
+span.mdbc-pref-options-code-span {
+  font-family: monospace;
+  font-weight: 600;
+}
+span.mdbc-pref-options-span-first {
+  text-align: left;
+}
+span.mdbc-pref-options-span-left {
+  padding-left: 4px;
+  text-align: right;
+  padding-right: 0;
+  margin-right: 0;
+  font-size: 13px;
+}
+span.mdbc-pref-options-span-right {
+  flex-grow: 1;
+  text-align: left;
+  padding-left: 0;
+  margin-left: 0;
+  font-size: 13px;
+}
+
+/* 1. Hide the target element by default */
+.box-to-toggle {
+  display: none;
+  padding: 15px;
+  background-color: #f0f0f0;
+  margin-top: 10px;
+}
+
+/* 2. Show the element ONLY when the checkbox is checked */
+.toggle-trigger:checked ~ .box-to-toggle {
+  display: block;
+}

@@ -10,7 +10,14 @@
                 <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>
             </hbox>
             <hbox>
-                <label value="Output pdf dpi (default is 300):"/>
+                <label value="Output image size mode:"/>
+                <html:select id="pref-zoteroocr-outputdpi-value" preference="extensions.zotero.zoteroocr.imagesizeMode">
+                    <html:option value="resolution">Fixed resolution</html:option>
+                    <html:option value="mainimage">Main image size</html:option>
+                </html:select>
+            </hbox>
+            <hbox>
+                <label value="For fixed resolution: output pdf dpi (default is 300):"/>
                 <html:input type="text" id="pref-zoteroocr-outputdpi-value" preference="extensions.zotero.zoteroocr.outputDPI" width="60"/>
             </hbox>
             <hbox>

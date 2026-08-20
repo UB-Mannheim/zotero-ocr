@@ -158,6 +158,8 @@ ZoteroOCR = {
 
         const progress = createZoteroProgressWindow("Initializing...", 0);
 
+        let imagesizeMode = Zotero.Prefs.get("zoteroocr.imagesizeMode");
+
         async function checkExternalCmd(exeName, exePref, possiblePath) {
 
             // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
@@ -215,6 +217,9 @@ ZoteroOCR = {
                 return;
             }
 
+            let pdfinfo = pdftoppm.replace(/pdftoppm/, 'pdfinfo');
+            let pdfimages = pdftoppm.replace(/pdftoppm/, 'pdfimages');
+
             let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
             if (!(await IOUtils.exists(ocrEngine))) {
@@ -262,6 +267,63 @@ ZoteroOCR = {
                 let baseFilename = PathUtils.filename(pdf).replace(/\.pdf$/, '')
                 let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
                 // TODO filter out PDFs which have already a text layer ?
+
+                // TODO image size mode logic
+
+                // Get sizes for all PDF pages
+                let pdfimagesCmdArgs = ['-list', '-f',  '1', '-l', '-1', pdf]
+                logString = log("Running " + pdfimages + ' ' + pdfimagesCmdArgs.join(' '));
+                let pdfimagesProc = await Subprocess.call({
+                    command: pdfimages,
+                    workdir: dir,
+                    arguments: pdfimagesCmdArgs,
+                    stderr: "stdout"
+                });
+                const imagesizeRegex = /(\d*)\s+(\d+) image\s+(\d*)\s+(\d+)\s+/g
+
+                let imagesizeInfo = [];
+                let buffer = await pdfimagesProc.stdout.readString()
+                let size;
+                while ((size = imagesizeRegex.exec(buffer)) !== null) {
+                    // log(`Page ${size[1]} : image ${size[2]} ${size[3]} x ${size[3]}`);
+                    imagesizeInfo = [...imagesizeInfo, [size.slice(1)]];
+                }
+                log(`${imagesizeInfo}`);
+
+                let pdfinfoCmdArgs = ['-f',  '1', '-l', '-1', pdf]
+                logString = log("Running " + pdfinfo + ' ' + pdfinfoCmdArgs.join(' '));
+                let pdfinfoProc = await Subprocess.call({
+                    command: pdfinfo,
+                    workdir: dir,
+                    arguments: pdfinfoCmdArgs,
+                    stderr: "stdout"
+                });
+                const pagesizeRegex = /(^Page\s+\d+\s+size:.*$)/g
+
+                let pagesizeInfo = [];
+                buffer = await pdfinfoProc.stdout.readString()
+                log(buffer);
+
+                let dimensions;
+                for (let line of buffer.split('\n')) {
+                    dimensions = [];
+                    if (line.match(pagesizeRegex)) {
+                        for (let token of line.split(' ')) {
+                            if (token && !isNaN(token)) {
+                                dimensions = [...dimensions, token];
+                            }
+                        }
+                        pagesizeInfo = [...pagesizeInfo, JSON.parse(JSON.stringify(dimensions))];
+                    }
+                }
+
+                if (imagesizeMode == "mainimage") {
+                    // Extract get the size of the main image on each PDF page
+                    
+
+                }
+                
+                xxxx
 
                 // build the pdftoppm arguments based on hidden preferences:
                 // => will produce a PDF output with reasonable size and image quality

@@ -270,7 +270,7 @@ ZoteroOCR = {
                 // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
                 // Use progressive JPEG: yes (pdftoppm default is no)
                 let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
-                let pdftoppmCmdArgs = ['-progress'];
+                let pdftoppmCmdArgs = ['-progress', '-cropbox'];
                 if (imageFormat == "jpg" || imageFormat == "jpeg") {
                     imageFormat = "jpg";
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");

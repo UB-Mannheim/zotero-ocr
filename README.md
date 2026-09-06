@@ -42,7 +42,9 @@ General instructions to install the extension:
 * Possibly, adjust the paths to Tesseract and pdftoppm in the add-on options.
 * Restart Zotero to activate Zotero OCR.
 
-Zotero 7 was officially released in August 2024, with important changes over Zotero 6. Support for version 6 will stop at some point in the near future, please consider upgrading.
+Zotero 7 was officially released in August 2024, with substantiantial improvements over Zotero 6. Further improvements and
+important security fixes have been introduced with Zotero 8, 9 and 10. 
+**We will stop supporting version 6 in the near future, please upgrade as soon as possible.**
 
 
 ## Configuration
@@ -90,7 +92,7 @@ Regular users do not need to read this section.
 
 Developers can build a new extension file by running `./build.sh [VERSION]`.
 It will ask for a version if no version was given on the command line.
-Then in Zotero install the newly created `.xpi`-file. as described in the Installation section.
+Then in Zotero install the newly created `.xpi` file as described in the Installation section.
 
 If any error occurs then you will see more details in the `Help`, `Report Error...` dialog. For some debugging messages you can activate in Zotero the debugging in the `Help`, `Debug Output Logging`.
 

@@ -95,6 +95,17 @@ Zotero.OCR = new function() {
 
     this.recognize = Zotero.Promise.coroutine(function*() {
 
+        setTimeout ( () => {
+            const win = Zotero. getMainWindow();
+            if (win) {
+                let message = "You are still using Zotero 6 or earlier.\n\n"
+                message += "That version has not been supported by the Zotero team for a few years, ";
+                message += "Zotero-OCR will stop working for you in the near future. "
+                message += "Upgrade to Zotero 10 as soon as possible, and enjoy many new features and security updates."
+                Services. prompt.alert (win, "Zotero-OCR", message);
+            }
+        }, 1000);
+
         let logString;
 
         const progress = createZoteroProgressWindow("Initializing...", 0);

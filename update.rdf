@@ -5,7 +5,7 @@
         {
           "version": "0.9.6",
           "update_link": "https://github.com/UB-Mannheim/zotero-ocr/releases/download/0.9.6/zotero-ocr-0.9.6.xpi",
-          "update_hash": "sha256:",
+          "update_hash": "sha256:9362734df35f4d53a60c8ec63a4134a3579bbc223a5d97d8488eca6dc8c9e0bf",
           "applications": {
             "gecko": {
               "strict_min_version": "60.0"

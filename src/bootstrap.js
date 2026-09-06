@@ -36,6 +36,11 @@ function shutdown() {
 	ZoteroOCR = undefined;
 }
 
+function install() {
+	log("Installed");
+}
+
+
 function uninstall() {
 	log("Uninstalled");
 }

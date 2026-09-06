@@ -270,7 +270,10 @@ ZoteroOCR = {
                 // JPEG Hufmann tables optimization: yes (pdftoppm default is no)
                 // Use progressive JPEG: yes (pdftoppm default is no)
                 let imageFormat = Zotero.Prefs.get("zoteroocr.imageFormat");
-                let pdftoppmCmdArgs = ['-progress', '-cropbox'];
+                let pdftoppmCmdArgs = ['-progress'];
+                if (Zotero.Prefs.get("zoteroocr.useCropBox")) {
+                    pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-cropbox']
+                }
                 if (imageFormat == "jpg" || imageFormat == "jpeg") {
                     imageFormat = "jpg";
                     let jpegQuality = Zotero.Prefs.get("zoteroocr.jpegQuality");
@@ -421,11 +424,14 @@ ZoteroOCR = {
                     }
 
                     const res = string.match(pageRegex)
+                    let current
                     if (res) {
-                        let current = parseInt(res[1])
+                        current  = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
                         progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
                         logString = log(`page: ${current + 1}`)
+                    } else {
+                        progress.updateMessage(`Processing page ${current} of ${pageCount}`)
                     }
                 }
 

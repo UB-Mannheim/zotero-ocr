@@ -21,7 +21,7 @@
         <groupbox>
             <html:h2>Output options</html:h2>
             <checkbox preference="extensions.zotero.zoteroocr.outputNote" label="Save output as a note"/>
-            <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" label="Save output as a PDF with text layer" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
+            <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" label="Save output as a PDF with text layer" oncommand="document.getElementById('checkbox-zoteroocr-overwrite-pdf').disabled = !document.getElementById('checkbox-zoteroocr-output-pdf').checked"/>
             <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="extensions.zotero.zoteroocr.overwritePDF" label="Overwrite the initial PDF with the output" class="indented-pref"/>
             <checkbox preference="extensions.zotero.zoteroocr.outputHocr" label="Save output as a HTML/hocr file(s)"/>
             <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->

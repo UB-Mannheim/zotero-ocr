@@ -289,6 +289,7 @@ ZoteroOCR = {
                 progress.updateMessage(logString);
                 // extract images from PDF
                 let imageList = PathUtils.join(dir, baseKey + '-list.txt');
+                let imageListArray = [];
                 let pageCount;
                 if (!(await IOUtils.exists(imageList))) {
                     logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
@@ -327,8 +328,6 @@ ZoteroOCR = {
                         throw new Error(errorLog)
                     }
 
-                    var imageListArray = [];
-
                     await IOUtils.getChildren(dir).then(
                         (entries) => {
                             let imgRegexp;
@@ -351,10 +350,10 @@ ZoteroOCR = {
                         }
                     );
                 } else {
-                    // if image-list already exists, must read it to know pageCount
+                    // if image-list already exists, read it to know pageCount and image names
                     let buffer = await Zotero.File.getContentsAsync(imageList)
-                    let lines = buffer.split(/[^\r\n]+/g)
-                    pageCount = lines.length - 1
+                    imageListArray = buffer.split(/\r?\n/).filter((line) => line.length > 0)
+                    pageCount = imageListArray.length
                 }
 
                 let parameters = [imageList];

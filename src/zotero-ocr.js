@@ -423,14 +423,11 @@ ZoteroOCR = {
                     }
 
                     const res = string.match(pageRegex)
-                    let current
                     if (res) {
-                        current  = parseInt(res[1])
+                        let current = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
                         progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
                         logString = log(`page: ${current + 1}`)
-                    } else {
-                        progress.updateMessage(`Processing page ${current} of ${pageCount}`)
                     }
                 }
 

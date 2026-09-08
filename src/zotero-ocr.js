@@ -163,7 +163,7 @@ ZoteroOCR = {
             // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
             // If it is found, the settings are updated.
             // Otherwise the last possible location is returned.
-            let externalCmd = Zotero.Prefs.get(exePref);
+            let externalCmd = Zotero.Prefs.get(exePref) || "";
             // First of all, emove unncessary quotes from Windows paths
             if (externalCmd.match(/"/g)) {
                 let unquotedCmd = externalCmd.replace(/"/g, '');

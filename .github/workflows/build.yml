@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup git
         run: git config --global user.email "ci@example.com" && git config --global user.name "GitHub CI"

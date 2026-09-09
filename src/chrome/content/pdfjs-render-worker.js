@@ -116,7 +116,7 @@ function setJpegDensity(bytes, dpi) {
     }
 }
 
-async function render({ buffer, dpi, baseKey, imageFormat, jpegQuality }) {
+async function openDocument(buffer) {
     const lib = await getLib();
     const loadingTask = lib.getDocument({
         data: new Uint8Array(buffer),
@@ -131,41 +131,54 @@ async function render({ buffer, dpi, baseKey, imageFormat, jpegQuality }) {
         disableFontFace: true,
     });
     const doc = await loadingTask.promise;
+    return { doc, loadingTask };
+}
+
+async function render({ buffer, dpi, baseKey, imageFormat, jpegQuality, workerIndex = 0, totalWorkers = 1 }) {
+    const { doc, loadingTask } = await openDocument(buffer);
     try {
         const numPages = doc.numPages;
         self.postMessage({ type: "started", numPages });
-        const scale = dpi / 72;
-        const digitCount = String(numPages).length;
-        const isPng = imageFormat == "png";
-        for (let i = 1; i <= numPages; i++) {
-            const page = await doc.getPage(i);
-            try {
-                const viewport = page.getViewport({ scale });
-                const width = Math.ceil(viewport.width);
-                const height = Math.ceil(viewport.height);
-                const canvas = new OffscreenCanvas(width, height);
-                const context = canvas.getContext("2d", { alpha: false });
-                if (!context) {
-                    throw new Error("Could not get a 2d canvas context");
+        // Split the pages into consecutive, non-overlapping ranges so that
+        // several workers can render the same document in parallel. With a
+        // single worker this is simply the whole document.
+        const chunkSize = Math.ceil(numPages / totalWorkers);
+        const start0 = workerIndex * chunkSize;
+        const end0 = Math.min(start0 + chunkSize, numPages);
+        if (start0 < numPages) {
+            const scale = dpi / 72;
+            const digitCount = String(numPages).length;
+            const isPng = imageFormat == "png";
+            for (let i = start0 + 1; i <= end0; i++) {
+                const page = await doc.getPage(i);
+                try {
+                    const viewport = page.getViewport({ scale });
+                    const width = Math.ceil(viewport.width);
+                    const height = Math.ceil(viewport.height);
+                    const canvas = new OffscreenCanvas(width, height);
+                    const context = canvas.getContext("2d", { alpha: false });
+                    if (!context) {
+                        throw new Error("Could not get a 2d canvas context");
+                    }
+                    // do not render annotations, as pdftoppm doesn't by default
+                    await page.render({ canvasContext: context, viewport, annotationMode: 0 }).promise;
+                    const options = { type: isPng ? "image/png" : "image/jpeg" };
+                    if (!isPng) {
+                        options.quality = jpegQuality / 100;
+                    }
+                    const blob = await canvas.convertToBlob(options);
+                    const imageBuffer = await blob.arrayBuffer();
+                    if (!isPng) {
+                        setJpegDensity(new Uint8Array(imageBuffer), dpi);
+                    }
+                    // same file naming scheme as pdftoppm (baseKey-page-N.<ext>,
+                    // N zero-padded to the page count)
+                    const filename = baseKey + "-page-" + String(i).padStart(digitCount, "0") + (isPng ? ".png" : ".jpg");
+                    self.postMessage({ type: "image", filename, buffer: imageBuffer }, [imageBuffer]);
+                    self.postMessage({ type: "progress", i, numPages });
+                } finally {
+                    page.cleanup();
                 }
-                // do not render annotations, as pdftoppm doesn't by default
-                await page.render({ canvasContext: context, viewport, annotationMode: 0 }).promise;
-                const options = { type: isPng ? "image/png" : "image/jpeg" };
-                if (!isPng) {
-                    options.quality = jpegQuality / 100;
-                }
-                const blob = await canvas.convertToBlob(options);
-                const imageBuffer = await blob.arrayBuffer();
-                if (!isPng) {
-                    setJpegDensity(new Uint8Array(imageBuffer), dpi);
-                }
-                // same file naming scheme as pdftoppm (baseKey-page-N.<ext>,
-                // N zero-padded to the page count)
-                const filename = baseKey + "-page-" + String(i).padStart(digitCount, "0") + (isPng ? ".png" : ".jpg");
-                self.postMessage({ type: "image", filename, buffer: imageBuffer }, [imageBuffer]);
-                self.postMessage({ type: "progress", i, numPages });
-            } finally {
-                page.cleanup();
             }
         }
         self.postMessage({ type: "done" });
@@ -187,6 +200,14 @@ self.addEventListener("message", async (event) => {
                 self.postMessage({ type: "pong", ok: true, base: pdfjsBase, workerModuleError: pdfjsWorkerError || null });
             } catch (e) {
                 self.postMessage({ type: "pong", ok: false, error: errorMessage(e) });
+            }
+        } else if (type === "info") {
+            const { doc, loadingTask } = await openDocument(data.buffer);
+            self.postMessage({ type: "infoResult", numPages: doc.numPages });
+            try {
+                await loadingTask.destroy();
+            } catch (e) {
+                // ignore
             }
         } else if (type === "render") {
             await render(data);

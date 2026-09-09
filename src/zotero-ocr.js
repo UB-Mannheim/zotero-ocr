@@ -15,8 +15,11 @@ if (Zotero.version >= "8" || Zotero.version >= "10") {
 }
 
 
+let lastLogMessage = "";
+
 function log(msg) {
     let message = "ZoteroOCR: " + msg;
+    lastLogMessage = message;
     Zotero.debug(message);
     return message;
 }
@@ -33,6 +36,19 @@ const L10n = {
     }
 };
 
+// tesseract reports each page it starts processing on its stdout
+const TESSERACT_PAGE_REGEX = /Page (\d+) :/;
+
+// Detect errors but ignore most Leptonica messages
+// reported by functions such as boxClipToRectangle, pixScanForForeground...
+// indicating recognition problems on one page or another but no critical tesseract failure.
+// Based on the function names in Leptonica's src/allheaders.h
+// using only those that should be specific enough (ca. 2400 matches out of 2750)
+const TESSERACT_ERROR_REGEX = /Error(?! in ((bbuffer|bmf|box|ccb|dewarp|dna|fpix|gplot|jb|l_amap|l_aset|l_binary|l_byte|l_clear|l_colorfill|l_convert|l_generate|l_get|l_hash|l_hmap|l_make|l_pdf|l_png|l_product|l_ps|l_rbtree|l_set|l_uncompress|lheap|lqueue|lstack|num|pix|pixacc|pixacomp|pixcmap|pixcomp|pms|projective|pta|ptr|rasterop|rch|recog|sa|sarray|sel|sudoku|wshed)a{0,2}[A-Z0-9]|lept_|l_bootnum))/;
+
+// Directories searched for external tools from the poppler-utils package
+const POPPLER_TOOL_PATHS = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     // The progress window is a borderless child window of the main
     // window. On some systems it can be hidden or even destroyed when
@@ -45,6 +61,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
     let active = false;
     let closing = false;
     let currentMessage = message;
+    let currentHeadline = "Zotero OCR";
     let currentProgress = initialProgress;
     let focusWindows = [];
 
@@ -90,7 +107,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
             originalClose.apply(progressWindow, arguments);
         };
 
-        progressWindow.changeHeadline("Zotero OCR");
+        progressWindow.changeHeadline(currentHeadline);
         progressWindow.show();
 
         // Mark the XUL window that show() just opened so we can
@@ -198,6 +215,7 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
         return {
             updateProgress: () => false,
             updateMessage: () => {},
+            changeHeadline: () => {},
             close: () => {}
         };
     }
@@ -222,6 +240,16 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
                 progressBar.setText(newMessage);
             } catch (e) {
                 log("Error updating message:");
+                log(e);
+            }
+        },
+        changeHeadline: (newHeadline) => {
+            try {
+                currentHeadline = newHeadline;
+                ensureXulWindow();
+                progressWindow.changeHeadline(newHeadline);
+            } catch (e) {
+                log("Error updating headline:");
                 log(e);
             }
         },
@@ -425,8 +453,456 @@ async function runPdftoppm({ pdftoppm, dir, pdftoppmCmdArgs, progress }) {
     return true;
 }
 
+async function findPopplerTool(exeName) {
+    for (const dir of POPPLER_TOOL_PATHS) {
+        let candidate = dir + exeName;
+        if (Zotero.isWin && !candidate.endsWith(".exe")) {
+            candidate += ".exe";
+        }
+        try {
+            if (await IOUtils.exists(candidate)) {
+                return candidate;
+            }
+        } catch (e) {
+            // if checking one of the possible paths throws an error, definitely count as not found
+        }
+    }
+    return null;
+}
+
+async function removeIfExistsSafe(file) {
+    try {
+        await Zotero.File.removeIfExists(file);
+    } catch (e) {
+        // ignore
+    }
+}
+
+async function readFileAsText(file) {
+    try {
+        const data = await IOUtils.read(file);
+        return new TextDecoder().decode(data);
+    } catch (e) {
+        log("Failed to read " + file + ": " + e);
+        throw e;
+    }
+}
+
+// Read the stdout of a running tesseract process until it exits.
+// startPage is the 0-based index of the first page in this process' list,
+// so that the page numbers reported in the progress window are global.
+// Returns null on success, otherwise the (possibly truncated) error log.
+async function drainTesseract(proc, { startPage, pageCount, progress }) {
+    let errorLog = '';
+    let errorLogOn = false;
+    let string;
+    while ((string = await proc.stdout.readString())) {
+        // Display the captured string in the log messages, so that even warnings are logged
+        log(string);
+
+        if (!errorLogOn) {
+            errorLogOn = string.match(TESSERACT_ERROR_REGEX);
+        }
+
+        if (errorLogOn) {
+            errorLog += string;
+        }
+
+        const res = string.match(TESSERACT_PAGE_REGEX);
+        if (res) {
+            const globalPage = startPage + parseInt(res[1]) + 1;
+            // display page count starting at 1 instead of zero
+            progress.updateMessage(await L10n.get("ocr-progress-processing-page", { page: globalPage, total: pageCount }));
+            log(`page: ${globalPage}`);
+        }
+    }
+
+    let { exitCode } = await proc.wait();
+    log(`\nError code is ${exitCode}`);
+
+    if (errorLogOn || (exitCode !== 0)) {
+        // for logs longer than 24 lines, keep only the head and tail
+        const maxLogLines = 24;
+        let errorLines = errorLog.split(/\r?\n|\r|\n/g);
+        if (errorLines.length > maxLogLines) {
+            let head = errorLines.slice(0, maxLogLines / 2).join('\n');
+            let tail = errorLines.slice(-maxLogLines / 2).join('\n');
+            let skippedLines = errorLines.length - maxLogLines;
+            errorLog = head + "\n...\n" + await L10n.get("ocr-error-skipped-lines", { count: skippedLines }) + "\n...\n" + tail;
+        }
+
+        if (!errorLog) {
+            errorLog = await L10n.get("ocr-error-generic");
+        }
+        return errorLog;
+    }
+    return null;
+}
+
+async function runTesseractSequential({ ocrEngine, dir, imageList, ocrbase, ocrOptions, pageCount, progress }) {
+    let proc = await Subprocess.call({
+        command: ocrEngine,
+        workdir: dir,
+        arguments: [imageList, ocrbase, ...ocrOptions],
+        stderr: "stdout"
+    });
+    const errorLog = await drainTesseract(proc, { startPage: 0, pageCount, progress });
+    if (errorLog !== null) {
+        throw new Error(errorLog);
+    }
+}
+
+// Combine the per-part text, hOCR and PDF outputs of parallel tesseract runs
+// into the single files a sequential run would have produced.
+async function mergeTesseractOutputs({ dir, ocrbase, jobs, pdfunite }) {
+    // tesseract separates the text of consecutive pages with a form feed,
+    // so the per-part texts can be joined with the same character
+    const textParts = [];
+    for (const job of jobs) {
+        textParts.push(await readFileAsText(PathUtils.join(dir, ocrbase + '-part' + job.k + '.txt')));
+    }
+    await IOUtils.write(PathUtils.join(dir, ocrbase + '.txt'), new TextEncoder().encode(textParts.join('\f')));
+
+    if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
+        let preamble;
+        let tail;
+        const segments = [];
+        for (const job of jobs) {
+            const offset = job.part.start; // 0-based global index of the part's first page
+            const hocr = await readFileAsText(PathUtils.join(dir, ocrbase + '-part' + job.k + '.hocr'));
+            const pageStarts = [];
+            let idx = hocr.indexOf("<div class='ocr_page'");
+            while (idx >= 0) {
+                pageStarts.push(idx);
+                idx = hocr.indexOf("<div class='ocr_page'", idx + 1);
+            }
+            const tailStart = hocr.lastIndexOf(' </body>');
+            if (pageStarts.length === 0 || tailStart <= pageStarts[0]) {
+                throw new Error("Malformed hOCR output of tesseract part " + job.k);
+            }
+            if (job.k === 0) {
+                preamble = hocr.slice(0, pageStarts[0]);
+                tail = hocr.slice(tailStart);
+            }
+            for (let j = 0; j < pageStarts.length; j++) {
+                const page = offset + j + 1; // 1-based global page number
+                const segEnd = j + 1 < pageStarts.length ? pageStarts[j + 1] : tailStart;
+                let segment = hocr.slice(pageStarts[j], segEnd);
+                // renumber the element ids from the part's own page numbering
+                // to the global page numbering of the combined document
+                segment = segment.replace("id='page_" + (j + 1) + "'", "id='page_" + page + "'");
+                segment = segment.replace(
+                    new RegExp("id='(block|par|line|word)_" + (j + 1) + "_", "g"),
+                    (m, name) => "id='" + name + '_' + page + '_'
+                );
+                segment = segment.replace("ppageno " + j + ";", "ppageno " + (page - 1) + ";");
+                // tesseract indents all but the first page of a document by two
+                // spaces; within a part that indentation belongs to the end of
+                // the previous segment, so only the first page of a part needs
+                // it added here
+                if (j === 0 && job.k > 0) {
+                    segment = "  " + segment;
+                }
+                segments.push(segment);
+            }
+        }
+        await IOUtils.write(PathUtils.join(dir, ocrbase + '.hocr'),
+            new TextEncoder().encode(preamble + segments.join('') + tail));
+    }
+
+    if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
+        const mergeArgs = jobs.map(job => PathUtils.join(dir, ocrbase + '-part' + job.k + '.pdf'));
+        mergeArgs.push(PathUtils.join(dir, ocrbase + '.pdf'));
+        const proc = await Subprocess.call({
+            command: pdfunite,
+            workdir: dir,
+            arguments: mergeArgs,
+            stderr: "stdout"
+        });
+        let output = '';
+        let string;
+        while ((string = await proc.stdout.readString())) {
+            output += string;
+        }
+        const { exitCode } = await proc.wait();
+        if (exitCode !== 0) {
+            throw new Error("pdfunite failed with exit code " + exitCode + (output ? ":\n" + output : ""));
+        }
+    }
+}
+
+async function runTesseractParallel({ ocrEngine, dir, imageList, imageListArray, ocrbase, ocrOptions, pageCount, parallelCount, pdfunite, progress }) {
+    // split the page images into consecutive chunks, one for each tesseract process
+    const chunkSize = Math.ceil(pageCount / parallelCount);
+    const parts = [];
+    for (let start = 0; start < pageCount; start += chunkSize) {
+        const end = Math.min(start + chunkSize, pageCount);
+        parts.push({ start, images: imageListArray.slice(start, end) });
+    }
+
+    const listBase = PathUtils.join(dir, PathUtils.filename(imageList).replace(/-list\.txt$/, ''));
+    const jobs = [];
+    try {
+        for (let k = 0; k < parts.length; k++) {
+            const partList = listBase + '-part' + k + '.txt';
+            Zotero.File.putContents(Zotero.File.pathToFile(partList), parts[k].images.join('\n'));
+            const proc = await Subprocess.call({
+                command: ocrEngine,
+                workdir: dir,
+                arguments: [partList, ocrbase + '-part' + k, ...ocrOptions],
+                stderr: "stdout"
+            });
+            jobs.push({ proc, part: parts[k], k, partList });
+        }
+
+        // read the stdout of all processes concurrently
+        const results = await Promise.all(jobs.map(job =>
+            drainTesseract(job.proc, { startPage: job.part.start, pageCount, progress })
+        ));
+        const failures = results
+            .map((errorLog, k) => errorLog ? { k, errorLog } : null)
+            .filter((f) => f);
+        if (failures.length) {
+            throw new Error(failures.map(f => "tesseract part " + f.k + " failed:\n" + f.errorLog).join("\n\n"));
+        }
+
+        await mergeTesseractOutputs({ dir, ocrbase, jobs, pdfunite });
+    } finally {
+        // stop any tesseract processes that are still running
+        for (const job of jobs) {
+            try {
+                job.proc.kill();
+            } catch (e) {
+                // already finished
+            }
+        }
+        // remove the per-part files (image lists and outputs)
+        for (const job of jobs) {
+            for (const ext of ['txt', 'pdf', 'hocr']) {
+                await removeIfExistsSafe(PathUtils.join(dir, ocrbase + '-part' + job.k + '.' + ext));
+            }
+            await removeIfExistsSafe(job.partList);
+        }
+    }
+}
+
+// The number of parallel processes, as configured by the user. It applies to
+// both pdf.js page rendering and tesseract OCR. It is limited to 4, because a
+// larger number only wastes memory (each process/worker loads its own copy of
+// the PDF and, for tesseract, of the language models).
+function getParallelCount() {
+    let n = parseInt(Zotero.Prefs.get("zoteroocr.parallel"), 10);
+    if (isNaN(n) || n < 1) {
+        n = 1;
+    }
+    if (n > 4) {
+        log("Limiting the number of parallel processes to 4");
+    }
+    return Math.min(n, 4);
+}
+
+// Run tesseract over the image list, either in a single process or in
+// several parallel processes (see the zoteroocr.parallel preference).
+async function runTesseract({ ocrEngine, dir, imageList, imageListArray, ocrbase, ocrOptions, pageCount, pdfunite, progress }) {
+    const parallelCount = getParallelCount();
+    if (parallelCount >= 2 && pageCount >= 2) {
+        if (Zotero.Prefs.get("zoteroocr.outputPDF") && !pdfunite) {
+            log("pdfunite not found, running tesseract sequentially");
+            progress.changeHeadline(await L10n.get("ocr-progress-sequential-headline"));
+            progress.updateMessage(await L10n.get("ocr-progress-sequential", { count: pageCount }));
+        } else {
+            const chunks = Math.min(parallelCount, pageCount);
+            log("Running " + pageCount + " pages with up to " + parallelCount + " parallel tesseract processes");
+            progress.changeHeadline(await L10n.get("ocr-progress-parallel-headline", { count: chunks }));
+            progress.updateMessage(await L10n.get("ocr-progress-parallel", { pages: pageCount, count: chunks }));
+            return await runTesseractParallel({ ocrEngine, dir, imageList, imageListArray, ocrbase, ocrOptions, pageCount, parallelCount, pdfunite, progress });
+        }
+    }
+    return await runTesseractSequential({ ocrEngine, dir, imageList, ocrbase, ocrOptions, pageCount, progress });
+}
+
+// Ask a worker that already has pdf.js loaded how many pages the PDF has,
+// without rendering anything. This lets us decide how many parallel workers
+// to spawn without paying for one worker per page on small documents.
+async function probePageCount(worker, pdf) {
+    const data = await IOUtils.read(pdf);
+    const buffer = data.buffer ?? data;
+    const copy = buffer.slice(0);
+    return await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            worker.removeEventListener("message", onMessage);
+            reject(new Error("timed out determining the page count"));
+        }, 30000);
+        const onMessage = (event) => {
+            const msg = event.data;
+            if (!msg) {
+                return;
+            }
+            if (msg.type === "infoResult") {
+                clearTimeout(timer);
+                worker.removeEventListener("message", onMessage);
+                resolve(msg.numPages);
+            } else if (msg.type === "error") {
+                clearTimeout(timer);
+                worker.removeEventListener("message", onMessage);
+                reject(new Error(msg.error));
+            }
+        };
+        worker.addEventListener("message", onMessage);
+        worker.postMessage({ type: "info", data: { buffer: copy } }, [copy]);
+    });
+}
+
+// Render all pages of a PDF using several pdf.js workers in parallel. Each
+// worker renders a consecutive, non-overlapping range of pages, so the output
+// files are independent and need no merging.
+async function renderPagesWithPdfJsParallel(args, requestedK) {
+    const { pdf, dir, baseKey, imageFormat, dpi, jpegQuality, progress } = args;
+
+    const workers = [];
+    for (let k = 0; k < requestedK; k++) {
+        try {
+            workers.push(await createPdfJsWorker());
+        } catch (e) {
+            log("Could not create a pdf.js render worker, using " + workers.length + " instead of " + requestedK + ": " + e);
+            break;
+        }
+    }
+    if (!workers.length) {
+        log("No pdf.js render workers available");
+        return false;
+    }
+    const K = workers.length;
+    log("Rendering pages with " + K + " parallel pdf.js workers");
+
+    let numPages = null;
+    let doneCount = 0;
+    let workerError = null;
+    const completedPages = new Set();
+    const writtenFiles = [];
+    const writePromises = [];
+    let progressUpdates = Promise.resolve();
+
+    let finished = false;
+    let lastActivity = Date.now();
+    let watchdog = null;
+    const allFinished = new Promise((resolve) => {
+        const finish = (error) => {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            clearTimeout(watchdog);
+            watchdog = null;
+            if (error) {
+                workerError = error;
+            }
+            resolve();
+        };
+        // Watchdog against a worker that dies (e.g. runs out of memory)
+        // without reporting any error: without it, the wait for all
+        // workers would never end. Give up only after ten minutes of
+        // inactivity, so that very large documents still make it.
+        const checkActivity = () => {
+            if (Date.now() - lastActivity > 600000) {
+                finish("Timed out waiting for the pdf.js render workers");
+            } else {
+                watchdog = setTimeout(checkActivity, 60000);
+            }
+        };
+        watchdog = setTimeout(checkActivity, 60000);
+        for (const worker of workers) {
+            worker.addEventListener("error", (event) => {
+                finish("pdf.js render worker crashed: " + String(event.message || "Worker crashed"));
+            });
+            worker.addEventListener("message", (event) => {
+                const msg = event.data;
+                if (!msg) {
+                    return;
+                }
+                lastActivity = Date.now();
+                if (msg.type === "started") {
+                    if (numPages === null) {
+                        numPages = msg.numPages;
+                    }
+                } else if (msg.type === "progress") {
+                    completedPages.add(msg.i);
+                    if (numPages) {
+                        // Keep asynchronous translations ordered and finish them before closing.
+                        progressUpdates = progressUpdates.then(async () => {
+                            progress.updateMessage(await L10n.get("ocr-progress-extracting-page", { page: completedPages.size, total: numPages }));
+                            progress.updateProgress(Math.round(completedPages.size * 100 / numPages));
+                        }).catch(e => log("Error translating progress: " + e));
+                    }
+                } else if (msg.type === "image") {
+                    writePromises.push(
+                        IOUtils.write(PathUtils.join(dir, msg.filename), new Uint8Array(msg.buffer))
+                            .then(() => writtenFiles.push(msg.filename))
+                            .catch((e) => { workerError = "Failed to write " + msg.filename + ": " + e; })
+                    );
+                } else if (msg.type === "error") {
+                    finish(msg.error);
+                } else if (msg.type === "done") {
+                    doneCount++;
+                    if (doneCount >= K) {
+                        finish();
+                    }
+                }
+            });
+        }
+    });
+
+    try {
+        const data = await IOUtils.read(pdf);
+        const buffer = data.buffer ?? data;
+        for (let k = 0; k < K; k++) {
+            const copy = buffer.slice(0);
+            workers[k].postMessage(
+                { type: "render", data: { buffer: copy, dpi, baseKey, imageFormat, jpegQuality, workerIndex: k, totalWorkers: K } },
+                [copy]
+            );
+        }
+        await allFinished;
+    } finally {
+        for (const worker of workers) {
+            terminatePdfJsWorker(worker);
+        }
+    }
+    await Promise.all(writePromises);
+    await progressUpdates;
+
+    if (workerError) {
+        log("pdf.js parallel rendering failed: " + workerError);
+        // remove partially written images so that the pdftoppm fallback (if any) starts clean
+        for (const filename of writtenFiles) {
+            try {
+                await Zotero.File.removeIfExists(PathUtils.join(dir, filename));
+            } catch (e) {
+                // ignore
+            }
+        }
+        return false;
+    }
+    return true;
+}
+
 async function renderPagesWithPdfJs(pdfJs, args) {
     if (pdfJs.worker) {
+        const parallelCount = getParallelCount();
+        if (parallelCount >= 2) {
+            let numPages = null;
+            try {
+                numPages = await probePageCount(pdfJs.worker, args.pdf);
+            } catch (e) {
+                log("Could not determine the page count for parallel rendering: " + e);
+            }
+            if (numPages && numPages >= 2) {
+                const K = Math.min(parallelCount, numPages);
+                if (K >= 2) {
+                    return await renderPagesWithPdfJsParallel(args, K);
+                }
+            }
+        }
         return await renderPagesWithPdfJsWorker({ worker: pdfJs.worker }, args);
     }
     return await renderPagesWithPdfJsDirect({ pdfjsLib: pdfJs.pdfjsLib, base: pdfJs.base }, args);
@@ -874,10 +1350,9 @@ ZoteroOCR = {
                     pageCount = imageListArray.length
                 }
 
-                let parameters = [imageList];
-                parameters.push(ocrbase);
+                let ocrOptions = [];
 
-                parameters.push('--psm');
+                ocrOptions.push('--psm');
                 // PSM 2 is not implemented in tesseract
                 const validModes = ["0", "1", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
                 let PSMMode = Zotero.Prefs.get("zoteroocr.psmmode");
@@ -886,7 +1361,7 @@ ZoteroOCR = {
                     PSMMode = "3";
                     Zotero.Prefs.set("zoteroocr.psmmode", PSMMode);
                 }
-                parameters.push(PSMMode);
+                ocrOptions.push(PSMMode);
 
                 let ocrLanguage = Zotero.Prefs.get("zoteroocr.language");
                 // Convert existing instances with older or buggy defaults to English OCR
@@ -894,82 +1369,43 @@ ZoteroOCR = {
                     ocrLanguage = 'eng';
                     Zotero.Prefs.set("zoteroocr.language", ocrLanguage);
                 }
-                parameters.push('-l');
-                parameters.push(ocrLanguage);
+                ocrOptions.push('-l');
+                ocrOptions.push(ocrLanguage);
 
-                parameters.push('txt');
+                ocrOptions.push('txt');
                 if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
-                    parameters.push('pdf');
+                    ocrOptions.push('pdf');
                 }
                 if (Zotero.Prefs.get("zoteroocr.outputHocr")) {
-                    parameters.push('hocr');
+                    ocrOptions.push('hocr');
                 }
-                
+
+                // pdfunite (poppler-utils) is needed to merge the per-part PDFs
+                // produced by parallel tesseract runs
+                let pdfunite = null;
+                if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
+                    pdfunite = await findPopplerTool("pdfunite");
+                    if (!pdfunite) {
+                        log("pdfunite not found, parallel OCR with PDF output will run sequentially");
+                    }
+                }
+
                 progress.updateMessage(await L10n.get("ocr-progress-processing"));
-                logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
+                logString = log("Running " + ocrEngine + ' ' + [imageList, ocrbase].concat(ocrOptions).join(' '));
+
+                await runTesseract({
+                    ocrEngine,
+                    dir,
+                    imageList,
+                    imageListArray,
+                    ocrbase,
+                    ocrOptions,
+                    pageCount,
+                    pdfunite,
+                    progress
+                });
 
 
-                let proc = await Subprocess.call({
-                    command: ocrEngine,
-                    workdir: dir,
-                    arguments: parameters,
-                    stderr: "stdout"
-                })
-                const pageRegex = /Page (\d+) :/
-                let string
-                
-                // Detect errors but ignore most Leptonica messages
-                // reported by functions such as boxClipToRectangle, pixScanForForeground...
-                // indicating recognition problems on one page or another but no critical tesseract failure.
-                // Based on the function names in Leptonica's src/allheaders.h
-                // using only those that should be specific enough (ca. 2400 matches out of 2750)
-                const errorRegex = /Error(?! in ((bbuffer|bmf|box|ccb|dewarp|dna|fpix|gplot|jb|l_amap|l_aset|l_binary|l_byte|l_clear|l_colorfill|l_convert|l_generate|l_get|l_hash|l_hmap|l_make|l_pdf|l_png|l_product|l_ps|l_rbtree|l_set|l_uncompress|lheap|lqueue|lstack|num|pix|pixacc|pixacomp|pixcmap|pixcomp|pms|projective|pta|ptr|rasterop|rch|recog|sa|sarray|sel|sudoku|wshed)a{0,2}[A-Z0-9]|lept_|l_bootnum))/
-                let errorLog = ''
-                let errorLogOn = false
-
-                while ((string = await proc.stdout.readString())) {
-                    // logString = log(ocrEngine + " output \n" + string)
-                    // Display the captured string in the log messages, so that even warnings are logged
-                    logString = log(string)
-
-                    if (!errorLogOn) {
-                        errorLogOn = string.match(errorRegex)
-                    }
-                    
-                    if (errorLogOn) {
-                        errorLog += string
-                    }
-
-                    const res = string.match(pageRegex)
-                    if (res) {
-                        let current = parseInt(res[1])
-                        // display page count starting at 1 instead ot zero
-                        progress.updateMessage(await L10n.get("ocr-progress-processing-page", { page: current + 1, total: pageCount }))
-                        logString = log(`page: ${current + 1}`)
-                    }
-                }
-
-                let {exitCode} = await proc.wait();
-                log(`\nError code is ${exitCode}`);
-
-                if (errorLogOn || (exitCode !== 0)) {
-                //if (errorLogOn) {
-                    // for logs longer than 24 lines, keep only the head and tail
-                    const maxLogLines = 24;
-                    let errorLines = errorLog.split(/\r?\n|\r|\n/g);
-                    if (errorLines.length > maxLogLines) {
-                        let head = errorLines.slice(0, maxLogLines / 2).join('\n');
-                        let tail = errorLines.slice(-maxLogLines / 2).join('\n');
-                        let skippedLines = errorLines.length - maxLogLines;
-                        errorLog = head + "\n...\n" + await L10n.get("ocr-error-skipped-lines", { count: skippedLines }) + "\n...\n" + tail;
-                    }
-
-                    if (!errorLog) {
-                        errorLog = await L10n.get("ocr-error-generic")
-                    }
-                    throw new Error(errorLog)
-                }
-                
                 logString = await L10n.get("ocr-progress-completed");
                 progress.updateMessage(logString);
 

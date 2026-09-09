@@ -36,11 +36,18 @@
             <preference id="pref-zoteroocr-output-as-copy-attachment" name="extensions.zotero.zoteroocr.outputAsCopyAttachment" type="bool"/>
         </preferences>
         <groupbox>
-            <caption label="OCR parameters"/>
-            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
+            <caption label="Programs"/>
+            <label value="Full location of the tesseract executable:"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+            <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+            <spacer height="12"/>
             <label value="Full location of the pdftoppm executable:"/>
             <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
+            <label value="If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored." class="indented-pref"/>
+            <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+        </groupbox>
+        <groupbox>
+            <caption label="OCR parameters"/>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>

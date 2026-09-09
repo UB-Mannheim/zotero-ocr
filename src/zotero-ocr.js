@@ -22,56 +22,163 @@ function log(msg) {
 }
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
-    try {
-        // Create a progress window using Zotero's API
-        const progressWindow = new Zotero.ProgressWindow({
+    // The progress window is a borderless child window of the main
+    // window. On some systems it can be hidden or even destroyed when
+    // the user switches to another application, so we keep an eye on
+    // it: when the main window regains focus we bring the progress
+    // window to the front again, and if it has disappeared we
+    // recreate it. See https://github.com/UB-Mannheim/zotero-ocr/issues/124
+    let progressWindow;
+    let progressBar;
+    let active = false;
+    let closing = false;
+    let currentMessage = message;
+    let currentProgress = initialProgress;
+    let focusWindows = [];
+
+    function enumerateAllWindows() {
+        let windows = [];
+        let enumerator = Services.wm.getEnumerator(null);
+        while (enumerator.hasMoreElements()) {
+            windows.push(enumerator.getNext());
+        }
+        return windows;
+    }
+
+    function findOurXulWindow() {
+        for (let win of enumerateAllWindows()) {
+            try {
+                if (!win.closed && win.__zoteroOCRProgressWindow) {
+                    return win;
+                }
+            } catch (e) {
+                // Ignore windows that are not accessible
+            }
+        }
+        return null;
+    }
+
+    function createXulWindow() {
+        // The document of the new window is still loading when show()
+        // returns, so we identify it by comparing the lists of all
+        // open windows instead of looking at the document.
+        let existing = new Set(enumerateAllWindows());
+
+        progressWindow = new Zotero.ProgressWindow({
             closeOnClick: false
         });
 
-        // Set the headline/title
-        progressWindow.changeHeadline("Zotero OCR");
+        // Log a stack trace if something closes the window
+        // without going through our close()
+        let originalClose = progressWindow.close;
+        progressWindow.close = function () {
+            if (active && !closing) {
+                log("Progress window was closed from outside:\n" + new Error().stack);
+            }
+            originalClose.apply(progressWindow, arguments);
+        };
 
-        // Show the window first before adding items
+        progressWindow.changeHeadline("Zotero OCR");
         progressWindow.show();
 
-        // Create a determined progress bar after showing the window
-        const icon = "chrome://zotero/skin/attachment-pdf.svg";
-        const progressBar = new progressWindow.ItemProgress(icon, message);
-
-        // Set initial progress
-        if (initialProgress > 0) {
-            progressBar.setProgress(initialProgress);
+        // Mark the XUL window that show() just opened so we can
+        // recognize it again in findOurXulWindow()
+        for (let win of enumerateAllWindows()) {
+            if (!existing.has(win)) {
+                win.__zoteroOCRProgressWindow = true;
+                break;
+            }
         }
 
-        return {
-            updateProgress: (progress) => {
-                try {
-                    const validProgress = Math.min(100, Math.max(0, progress));
-                    progressBar.setProgress(validProgress);
-                    return validProgress === 100;
-                } catch (e) {
-                    log("Error updating progress:");
-                    log(e);
-                    return false;
-                }
-            },
-            updateMessage: (newMessage) => {
-                try {
-                    progressBar.setText(newMessage);
-                } catch (e) {
-                    log("Error updating message:");
-                    log(e);
-                }
-            },
-            close: () => {
-                try {
-                    progressWindow.close();
-                } catch (e) {
-                    log("Error closing progress window:");
-                    log(e);
-                }
+        const icon = "chrome://zotero/skin/attachment-pdf.svg";
+        progressBar = new progressWindow.ItemProgress(icon, currentMessage);
+        if (currentProgress > 0) {
+            progressBar.setProgress(currentProgress);
+        }
+    }
+
+    function recreateXulWindow() {
+        closing = true;
+        try {
+            progressWindow.close();
+        } catch (e) {
+            log("Error closing stale progress window:");
+            log(e);
+        }
+        closing = false;
+        try {
+            createXulWindow();
+        } catch (e) {
+            log("Error recreating progress window:");
+            log(e);
+        }
+    }
+
+    function ensureXulWindow() {
+        if (!active || closing) {
+            return null;
+        }
+        let win = findOurXulWindow();
+        if (!win) {
+            log("Progress window disappeared, recreating it");
+            recreateXulWindow();
+            win = findOurXulWindow();
+        }
+        return win;
+    }
+
+    let mainWasFocused = true;
+
+    function onMainWindowBlur() {
+        mainWasFocused = false;
+    }
+
+    function onMainWindowFocus() {
+        let win = ensureXulWindow();
+        if (win && !mainWasFocused) {
+            // The main window regained focus, e.g. after the user
+            // switched back to the application. Bring the progress
+            // window to the front in case it was hidden together
+            // with the other windows.
+            try {
+                win.focus();
+            } catch (e) {
+                log("Error focusing progress window:");
+                log(e);
             }
-        };
+        }
+        mainWasFocused = true;
+    }
+    function attachFocusListeners() {
+        for (let win of Zotero.getMainWindows()) {
+            try {
+                if (!win.closed) {
+                    win.addEventListener("focus", onMainWindowFocus);
+                    win.addEventListener("blur", onMainWindowBlur);
+                    focusWindows.push(win);
+                }
+            } catch (e) {
+                // Ignore windows that are not accessible
+            }
+        }
+    }
+
+    function detachFocusListeners() {
+        for (let win of focusWindows) {
+            try {
+                win.removeEventListener("focus", onMainWindowFocus);
+                win.removeEventListener("blur", onMainWindowBlur);
+            } catch (e) {
+                // The window may already be closed
+            }
+        }
+        focusWindows = [];
+    }
+
+    try {
+        createXulWindow();
+        active = true;
+        attachFocusListeners();
     } catch (e) {
         log("Error creating progress window:");
         log(e);
@@ -82,6 +189,42 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
             close: () => {}
         };
     }
+
+    return {
+        updateProgress: (progress) => {
+            const validProgress = Math.min(100, Math.max(0, progress));
+            currentProgress = validProgress;
+            try {
+                ensureXulWindow();
+                progressBar.setProgress(validProgress);
+            } catch (e) {
+                log("Error updating progress:");
+                log(e);
+            }
+            return validProgress === 100;
+        },
+        updateMessage: (newMessage) => {
+            try {
+                currentMessage = newMessage;
+                ensureXulWindow();
+                progressBar.setText(newMessage);
+            } catch (e) {
+                log("Error updating message:");
+                log(e);
+            }
+        },
+        close: () => {
+            active = false;
+            closing = true;
+            detachFocusListeners();
+            try {
+                progressWindow.close();
+            } catch (e) {
+                log("Error closing progress window:");
+                log(e);
+            }
+        }
+    };
 }
 
 

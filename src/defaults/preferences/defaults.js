@@ -14,4 +14,5 @@ pref("extensions.zotero.zoteroocr.imageFormat", "jpg");
 pref("extensions.zotero.zoteroocr.jpegQuality", "70");
 pref("extensions.zotero.zoteroocr.jpegProgressive", "y");
 pref("extensions.zotero.zoteroocr.jpegOptimization", "y");
+pref("extensions.zotero.zoteroocr.forcePdftoppm", false);
 

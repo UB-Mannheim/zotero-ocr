@@ -15,4 +15,5 @@ pref("extensions.zotero.zoteroocr.jpegQuality", "70");
 pref("extensions.zotero.zoteroocr.jpegProgressive", "y");
 pref("extensions.zotero.zoteroocr.jpegOptimization", "y");
 pref("extensions.zotero.zoteroocr.useCropBox", true)
+pref("extensions.zotero.zoteroocr.forcePdftoppm", false);
 

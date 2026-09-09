@@ -1,10 +1,17 @@
    <vbox>
-        <groupbox>
-            <html:h2>OCR parameters</html:h2>
-            <label value="Full location of the tesseract executable (when empty, some standard locations are searched for it):"/>
-            <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
-            <label value="Full location of the pdftoppm executable:"/>
-            <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
+         <groupbox>
+             <html:h2>Programs</html:h2>
+             <label value="Full location of the tesseract executable:"/>
+             <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
+             <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+             <html:div style="height: 12px;"/>
+             <label value="Full location of the pdftoppm executable:"/>
+             <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
+             <label value="If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored." class="indented-pref"/>
+             <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+         </groupbox>
+         <groupbox>
+             <html:h2>OCR parameters</html:h2>
             <hbox>
                 <label value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>

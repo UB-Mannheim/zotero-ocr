@@ -21,6 +21,10 @@ function log(msg) {
     return message;
 }
 
+// Set while a recognition run is in progress, to avoid concurrent runs
+// interfering with each other's intermediate files.
+let recognizing = false;
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     try {
         // Create a progress window using Zotero's API
@@ -81,6 +85,350 @@ function createZoteroProgressWindow(message, initialProgress = 0) {
             updateMessage: () => {},
             close: () => {}
         };
+    }
+}
+
+
+function waitForWorkerMessage(worker, type, timeoutMs = 30000) {
+    return new Promise((resolve, reject) => {
+        function onMessage(event) {
+            if (event.data && event.data.type === type) {
+                cleanup();
+                resolve(event.data);
+            }
+        }
+        function onWorkerError(event) {
+            cleanup();
+            reject(new Error(event.message || "Worker error"));
+        }
+        function cleanup() {
+            clearTimeout(timer);
+            worker.removeEventListener("message", onMessage);
+            worker.removeEventListener("error", onWorkerError);
+        }
+        const timer = setTimeout(() => {
+            cleanup();
+            reject(new Error("Timed out waiting for the pdf.js worker"));
+        }, timeoutMs);
+        worker.addEventListener("message", onMessage);
+        worker.addEventListener("error", onWorkerError);
+        worker.postMessage({ type: "ping" });
+    });
+}
+
+async function fetchText(url) {
+    // Try the standard fetch() first.
+    try {
+        const text = await (await fetch(url)).text();
+        if (text) {
+            return { text, via: "fetch" };
+        }
+    } catch (e) {
+        log("fetch failed for " + url + ": " + e);
+    }
+    // Then NetUtil.asyncFetch(), which uses the channel stack and can read
+    // chrome:// resources that fetch() refuses.
+    try {
+        const { NetUtil } = ChromeUtils.importESModule("resource://gre/modules/NetUtil.sys.mjs");
+        const ab = await NetUtil.asyncFetch(url, null, { binary: true });
+        const text = new TextDecoder().decode(ab);
+        if (text) {
+            return { text, via: "NetUtil" };
+        }
+    } catch (e) {
+        log("NetUtil.asyncFetch failed for " + url + ": " + e);
+    }
+    return null;
+}
+
+async function createPdfJsWorker() {
+    // The Worker constructor rejects chrome:// and add-on resource:// script
+    // URLs, so fetch the script and create the worker from a Blob URL instead.
+    const rootURI = (typeof ZoteroOCR !== "undefined" && ZoteroOCR.rootURI) || "";
+    const urls = [
+        rootURI + "chrome/content/pdfjs-render-worker.js",
+        "chrome://zoteroocr/content/pdfjs-render-worker.js",
+    ];
+    let source = null;
+    for (const url of urls) {
+        const result = await fetchText(url);
+        if (result) {
+            source = result.text;
+            log("Loaded pdf.js worker script via " + result.via + " (" + source.length + " chars) from " + url);
+            break;
+        }
+    }
+    if (!source) {
+        throw new Error("Could not obtain the pdf.js worker script");
+    }
+    const blob = new Blob([source], { type: "text/javascript" });
+    const blobUrl = URL.createObjectURL(blob);
+    const worker = new Worker(blobUrl);
+    worker.__blobUrl = blobUrl;
+    return worker;
+}
+
+function terminatePdfJsWorker(worker) {
+    if (!worker) {
+        return;
+    }
+    try {
+        worker.terminate();
+    } catch (e) {
+        // ignore
+    }
+    if (worker.__blobUrl) {
+        try {
+            URL.revokeObjectURL(worker.__blobUrl);
+        } catch (e) {
+            // ignore
+        }
+    }
+}
+
+async function loadPdfJs() {
+
+    // Try to use the pdf.js library that ships with Zotero's built-in PDF reader,
+    // so that the extension does not need pdftoppm to convert PDF pages to images.
+    // The location of the library changed between Zotero versions, so try several known paths.
+    const candidates = [
+        "resource://zotero/reader/pdf/build/pdf.mjs",
+        "resource://zotero/pdf.js/build/pdf.mjs",
+    ];
+
+    // pdf.js patches Map.prototype when it is loaded, which fails in the
+    // parent-process chrome scope, because built-in prototypes are not
+    // extensible there. So first try to run it in a dedicated worker, which
+    // has its own realm with extensible prototypes, as Zotero's own document
+    // worker does.
+    try {
+        const worker = await createPdfJsWorker();
+        const pong = await waitForWorkerMessage(worker, "pong");
+        if (pong.ok) {
+            log("pdf.js worker ready (" + pong.base + ")");
+            if (pong.workerModuleError) {
+                log("pdf.worker.mjs could not be loaded in the worker: " + pong.workerModuleError);
+            }
+            return { worker, base: pong.base };
+        }
+        terminatePdfJsWorker(worker);
+        log("pdf.js worker failed to load pdf.js: " + pong.error);
+    } catch (e) {
+        log("pdf.js worker not available: " + e);
+    }
+
+    // Fallback: import the library on the main thread (works on Zotero
+    // versions where built-in prototypes are extensible in the chrome scope)
+    for (const uri of candidates) {
+        try {
+            const pdfjsLib = await ChromeUtils.importESModule(uri);
+            // Importing the worker module makes pdf.js run on the main thread,
+            // so that no separate Web Worker is needed.
+            const pdfjsWorker = await ChromeUtils.importESModule(uri.replace(/pdf\.mjs$/, "pdf.worker.mjs"));
+            if (pdfjsWorker && pdfjsWorker.WorkerMessageHandler) {
+                globalThis.pdfjsWorker = pdfjsWorker;
+            }
+            return { pdfjsLib, base: uri.replace(/build\/pdf\.mjs$/, "") };
+        } catch (e) {
+            log("pdf.js not available at " + uri + ": " + e);
+        }
+    }
+    return null;
+}
+
+async function runPdftoppm({ pdftoppm, dir, pdftoppmCmdArgs, progress }) {
+    let proc = await Subprocess.call({
+        command: pdftoppm,
+        workdir: dir,
+        arguments: pdftoppmCmdArgs,
+        stderr: "stdout"
+    })
+    let regex = /(\d+) (\d+) (.+)/;
+    let string;
+
+    const errorRegex = /Error /
+    let errorLog = ''
+    let errorLogOn = false
+
+    while ((string = await proc.stdout.readString())) {
+        // Display the captured string in the log messages, so that even warnings are logged
+        log(string)
+
+        if (!errorLogOn) {
+            errorLogOn = string.match(errorRegex)
+        }
+
+        if (errorLogOn) {
+            errorLog += string
+        }
+
+        let res = regex.exec(string);
+        if (res) {
+            progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+        }
+    }
+
+    if (errorLogOn) {
+        throw new Error(errorLog)
+    }
+    return true;
+}
+
+async function renderPagesWithPdfJs(pdfJs, args) {
+    if (pdfJs.worker) {
+        return await renderPagesWithPdfJsWorker({ worker: pdfJs.worker }, args);
+    }
+    return await renderPagesWithPdfJsDirect({ pdfjsLib: pdfJs.pdfjsLib, base: pdfJs.base }, args);
+}
+
+async function renderPagesWithPdfJsWorker({ worker }, { pdf, dir, baseKey, imageFormat, dpi, jpegQuality, progress }) {
+
+    log("Rendering PDF pages with pdf.js (worker)");
+    const writtenFiles = [];
+    const writePromises = [];
+    let done = false;
+    let workerError = null;
+
+    function onMessage(event) {
+        const msg = event.data;
+        if (!msg) {
+            return;
+        }
+        if (msg.type === "started") {
+            log("Rendering " + msg.numPages + " pages at " + dpi + " DPI");
+        } else if (msg.type === "progress") {
+            progress.updateMessage(`Extracting page ${msg.i} of ${msg.numPages}`);
+            progress.updateProgress(Math.round(msg.i * 100 / msg.numPages));
+        } else if (msg.type === "image") {
+            writePromises.push(
+                IOUtils.write(PathUtils.join(dir, msg.filename), new Uint8Array(msg.buffer))
+                    .then(() => writtenFiles.push(msg.filename))
+                    .catch((e) => { workerError = "Failed to write " + msg.filename + ": " + e; })
+            );
+        } else if (msg.type === "error") {
+            workerError = msg.error;
+        } else if (msg.type === "done") {
+            done = true;
+        }
+    }
+
+    function onWorkerError(event) {
+        workerError = String(event.message || "Worker crashed");
+    }
+
+    try {
+        const data = await IOUtils.read(pdf);
+        const buffer = data.buffer ?? data;
+        worker.addEventListener("message", onMessage);
+        worker.addEventListener("error", onWorkerError);
+        worker.postMessage(
+            { type: "render", data: { buffer, dpi, baseKey, imageFormat, jpegQuality } },
+            [buffer]
+        );
+        while (!done && !workerError) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+    } finally {
+        worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onWorkerError);
+    }
+    await Promise.all(writePromises);
+
+    if (workerError) {
+        log("pdf.js worker rendering failed: " + workerError);
+        // remove partially written images so that the pdftoppm fallback (if any) starts clean
+        for (const filename of writtenFiles) {
+            try {
+                await Zotero.File.removeIfExists(PathUtils.join(dir, filename));
+            } catch (e) {
+                // ignore
+            }
+        }
+        return false;
+    }
+    return true;
+}
+
+async function renderPagesWithPdfJsDirect({ pdfjsLib, base }, { pdf, dir, baseKey, imageFormat, dpi, jpegQuality, progress }) {
+
+    // Render the pages of `pdf` into `dir` using the same file naming scheme
+    // as pdftoppm (baseKey-page-N.<ext>, N zero-padded to the page count).
+    // Note: pdf.js always renders the CropBox, so this path is only used
+    // when the useCropBox preference is not explicitly disabled.
+    let loadingTask = null;
+    const writtenFiles = [];
+    try {
+        log("Rendering PDF pages with pdf.js");
+        const data = await IOUtils.read(pdf);
+        loadingTask = pdfjsLib.getDocument({
+            data,
+            wasmUrl: base + "web/wasm/",
+            cMapUrl: base + "web/cmaps/",
+            cMapPacked: true,
+            standardFontDataUrl: base + "web/standard_fonts/",
+        });
+        const doc = await loadingTask.promise;
+        const numPages = doc.numPages;
+        log("Rendering " + numPages + " pages at " + dpi + " DPI");
+        const scale = dpi / 72;
+        const digitCount = String(numPages).length;
+        const isPng = imageFormat == "png";
+        for (let i = 1; i <= numPages; i++) {
+            const page = await doc.getPage(i);
+            try {
+                const viewport = page.getViewport({ scale });
+                const width = Math.ceil(viewport.width);
+                const height = Math.ceil(viewport.height);
+                let canvas;
+                if (typeof OffscreenCanvas !== "undefined") {
+                    canvas = new OffscreenCanvas(width, height);
+                } else {
+                    canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                const context = canvas.getContext("2d", { alpha: false });
+                if (!context) {
+                    throw new Error("Could not get a 2d canvas context");
+                }
+                // do not render annotations, as pdftoppm doesn't by default
+                await page.render({ canvasContext: context, viewport, annotationMode: 0 }).promise;
+                const options = { type: isPng ? "image/png" : "image/jpeg" };
+                if (!isPng) {
+                    options.quality = jpegQuality / 100;
+                }
+                const blob = canvas.convertToBlob
+                    ? await canvas.convertToBlob(options)
+                    : await new Promise((resolve) => canvas.toBlob(resolve, options.type, options.quality));
+                const filename = baseKey + "-page-" + String(i).padStart(digitCount, "0") + (isPng ? ".png" : ".jpg");
+                await IOUtils.write(PathUtils.join(dir, filename), new Uint8Array(await blob.arrayBuffer()));
+                writtenFiles.push(filename);
+                progress.updateMessage(`Extracting page ${i} of ${numPages}`);
+                progress.updateProgress(Math.round(i * 100 / numPages));
+            } finally {
+                page.cleanup();
+            }
+        }
+        return true;
+    } catch (e) {
+        log("pdf.js rendering failed: " + e);
+        // remove partially written images so that the pdftoppm fallback (if any) starts clean
+        for (const filename of writtenFiles) {
+            try {
+                await Zotero.File.removeIfExists(PathUtils.join(dir, filename));
+            } catch (e2) {
+                // ignore
+            }
+        }
+        return false;
+    } finally {
+        if (loadingTask) {
+            try {
+                await loadingTask.destroy();
+            } catch (e) {
+                // ignore
+            }
+        }
     }
 }
 
@@ -152,6 +500,12 @@ ZoteroOCR = {
 
     async recognize(window) {
 
+        if (recognizing) {
+            window.alert("Zotero OCR is already running. Please wait until it has finished.");
+            return;
+        }
+        recognizing = true;
+
         let logString;
 
         logString = log("entering recognize()");
@@ -201,25 +555,39 @@ ZoteroOCR = {
             return externalCmd;
         }
 
+        let pdfJs = null;
+
         try {
 
             /*
-                Check the settings and alternative possible locations for pdftoppm and tesseract.
+                Check the settings and alternative possible locations for tesseract.
                 If the last possible option doesn't exist, display an error message and quit.
+                PDF pages are rendered with the pdf.js library that ships with Zotero
+                if it is available; otherwise pdftoppm is required and looked up the same way.
             */
-
-            let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
-            let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
-            if (!(await IOUtils.exists(pdftoppm))) {
-                window.alert("No pdftoppm executable found, last check: " + pdftoppm);
-                return;
-            }
 
             let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
             if (!(await IOUtils.exists(ocrEngine))) {
                 window.alert("No tesseract executable found, last check: " + ocrEngine);
                 return;
+            }
+
+            // pdf.js always renders the CropBox, so it cannot be used if the user
+            // explicitly disabled the CropBox or forced pdftoppm
+            if (!Zotero.Prefs.get("zoteroocr.forcePdftoppm")
+                    && Zotero.Prefs.get("zoteroocr.useCropBox") !== false) {
+                pdfJs = await loadPdfJs();
+            }
+
+            let pdftoppm = null;
+            if (!pdfJs) {
+                let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+                pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+                if (!(await IOUtils.exists(pdftoppm))) {
+                    window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+                    return;
+                }
             }
 
             // Proceed with the actual selected items, process if the item is a PDF.
@@ -289,43 +657,36 @@ ZoteroOCR = {
                 progress.updateMessage(logString);
                 // extract images from PDF
                 let imageList = PathUtils.join(dir, baseKey + '-list.txt');
-                let imageListArray = [];
                 let pageCount;
+                let imageListArray = [];
                 if (!(await IOUtils.exists(imageList))) {
-                    logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
-                    let proc = await Subprocess.call({
-                        command: pdftoppm,
-                        workdir: dir,
-                        arguments: pdftoppmCmdArgs,
-                        stderr: "stdout"
-                    })
-                    let regex = /(\d+) (\d+) (.+)/;
-                    let string;
-
-                    const errorRegex = /Error /
-                    let errorLog = ''
-                    let errorLogOn = false
-
-                    while ((string = await proc.stdout.readString())) {
-                        // Display the captured string in the log messages, so that even warnings are logged
-                        log(string)
-
-                        if (!errorLogOn) {
-                            errorLogOn = string.match(errorRegex)
-                        }
-                
-                        if (errorLogOn) {
-                            errorLog += string
-                        }
-
-                        let res = regex.exec(string);
-                        if (res) {
-                            progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
-                        }
+                    let extracted = false;
+                    if (pdfJs) {
+                        logString = log("Rendering pages with pdf.js");
+                        extracted = await renderPagesWithPdfJs(pdfJs, {
+                            pdf,
+                            dir,
+                            baseKey,
+                            imageFormat,
+                            dpi: parseInt(Zotero.Prefs.get("zoteroocr.outputDPI"), 10) || 300,
+                            jpegQuality: parseInt(Zotero.Prefs.get("zoteroocr.jpegQuality"), 10) || 70,
+                            progress
+                        });
                     }
-
-                    if (errorLogOn) {
-                        throw new Error(errorLog)
+                    if (!extracted) {
+                        if (!pdftoppm) {
+                            // pdf.js is unavailable or failed: look for pdftoppm as a fallback
+                            let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
+                            pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
+                            if (!(await IOUtils.exists(pdftoppm))) {
+                                throw new Error("No pdftoppm executable found, last check: " + pdftoppm);
+                            }
+                        }
+                        if (pdfJs) {
+                            logString = log("pdf.js failed, falling back to pdftoppm");
+                        }
+                        logString = log("Running " + pdftoppm + ' ' + pdftoppmCmdArgs.join(' '));
+                        await runPdftoppm({ pdftoppm, dir, pdftoppmCmdArgs, progress });
                     }
 
                     await IOUtils.getChildren(dir).then(
@@ -544,6 +905,10 @@ ZoteroOCR = {
             window.alert(alertMessage);
 
         } finally {
+            recognizing = false;
+            if (pdfJs && pdfJs.worker) {
+                terminatePdfJsWorker(pdfJs.worker);
+            }
             progress.close();
         }
     }

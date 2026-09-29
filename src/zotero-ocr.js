@@ -21,6 +21,12 @@ function log(msg) {
     return message;
 }
 
+// Translate user-facing progress and alerts only for Serbian Latin; leave diagnostics intact.
+function ocrUi(english, serbianLatin) {
+    const locale = String(Zotero.locale || Services.locale?.appLocaleAsBCP47 || "").replace(/_/g, "-").toLowerCase();
+    return locale.startsWith("sr-latn") ? serbianLatin : english;
+}
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     try {
         // Create a progress window using Zotero's API
@@ -156,7 +162,7 @@ ZoteroOCR = {
 
         logString = log("entering recognize()");
 
-        const progress = createZoteroProgressWindow("Initializing...", 0);
+        const progress = createZoteroProgressWindow(ocrUi("Initializing...", "Pokretanje..."), 0);
 
         async function checkExternalCmd(exeName, exePref, possiblePath) {
 
@@ -211,14 +217,14 @@ ZoteroOCR = {
             let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
             if (!(await IOUtils.exists(pdftoppm))) {
-                window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+                window.alert(ocrUi("No pdftoppm executable found, last check: ", "Program pdftoppm nije pronađen, poslednja provera: ") + pdftoppm);
                 return;
             }
 
             let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
             if (!(await IOUtils.exists(ocrEngine))) {
-                window.alert("No tesseract executable found, last check: " + ocrEngine);
+                window.alert(ocrUi("No tesseract executable found, last check: ", "Program tesseract nije pronađen, poslednja provera: ") + ocrEngine);
                 return;
             }
 
@@ -238,7 +244,7 @@ ZoteroOCR = {
                         }
                         item = Zotero.Items.get(item.parentItemID);
                     } else {
-                        window.alert("Item is an attachment but not PDF and will be ignored.");
+                        window.alert(ocrUi("Item is an attachment but not PDF and will be ignored.", "Stavka je prilog, ali nije PDF i biće preskočena."));
                         continue;
                     }
                 } else {
@@ -246,11 +252,11 @@ ZoteroOCR = {
                         .map(itemID => Zotero.Items.get(itemID))
                         .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
                     if (pdfAttachments.length == 0) {
-                        window.alert("No PDF found for the selected item.");
+                        window.alert(ocrUi("No PDF found for the selected item.", "Za izabranu stavku nije pronađen PDF."));
                         continue;
                     }
                     if (pdfAttachments.length > 1) {
-                        window.alert("There are several PDFs attached to this item. Only the first one will be processed.");
+                        window.alert(ocrUi("There are several PDFs attached to this item. Only the first one will be processed.", "Uz ovu stavku je priloženo više PDF-ova. Biće obrađen samo prvi."));
                     }
                     pdfItem = pdfAttachments[0];
                 }
@@ -285,7 +291,7 @@ ZoteroOCR = {
                     pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 }
 
-                logString = "Extracting pages...";
+                logString = ocrUi("Extracting pages...", "Izdvajanje stranica...");
                 progress.updateMessage(logString);
                 // extract images from PDF
                 let imageList = PathUtils.join(dir, baseKey + '-list.txt');
@@ -320,7 +326,7 @@ ZoteroOCR = {
 
                         let res = regex.exec(string);
                         if (res) {
-                            progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+                            progress.updateMessage(ocrUi(`Extracting page ${res[1]} of ${res[2]}`, `Izdvajanje stranice ${res[1]} od ${res[2]}`))
                         }
                     }
 
@@ -387,7 +393,7 @@ ZoteroOCR = {
                     parameters.push('hocr');
                 }
                 
-                progress.updateMessage("Processing... please be patient");
+                progress.updateMessage(ocrUi("Processing... please be patient", "Obrada je u toku... sačekajte"));
                 logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
 
 
@@ -426,7 +432,7 @@ ZoteroOCR = {
                     if (res) {
                         let current = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
-                        progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
+                        progress.updateMessage(ocrUi(`Processing page ${current + 1} of ${pageCount}`, `Obrada stranice ${current + 1} od ${pageCount}`))
                         logString = log(`page: ${current + 1}`)
                     }
                 }
@@ -447,12 +453,12 @@ ZoteroOCR = {
                     }
 
                     if (!errorLog) {
-                        errorLog = "An error occurred"
+                        errorLog = ocrUi("An error occurred", "Došlo je do greške")
                     }
                     throw new Error(errorLog)
                 }
                 
-                logString = "OCR completed: attaching output";
+                logString = ocrUi("OCR completed: attaching output", "OCR je završen: dodavanje rezultata");
                 progress.updateMessage(logString);
 
                 if (Zotero.Prefs.get("zoteroocr.outputNote")) {
@@ -540,7 +546,7 @@ ZoteroOCR = {
             }
 
         } catch (error) {
-            let alertMessage = "Last ZoteroOCR log message: " + logString + "\n\nZoteroOCR error: " + error.message;
+            let alertMessage = ocrUi("Last ZoteroOCR log message: ", "Poslednja poruka u evidenciji dodatka Zotero OCR: ") + logString + "\n\n" + ocrUi("ZoteroOCR error: ", "Greška dodatka Zotero OCR: ") + error.message;
             window.alert(alertMessage);
 
         } finally {

@@ -1,2 +1,18 @@
 <!ENTITY ocr.menu.label			"OCR selected PDF(s)">
 <!ENTITY ocr.preferences.label			"Zotero OCR Preferences">
+
+<!ENTITY ocr.pref.general "General">
+<!ENTITY ocr.pref.parameters "OCR parameters">
+<!ENTITY ocr.pref.tesseract-path "Full location of the tesseract executable (when empty, some standard locations are searched for it):">
+<!ENTITY ocr.pref.pdftoppm-path "Full location of the pdftoppm executable:">
+<!ENTITY ocr.pref.language "Choose a language/script you want to use for recognition (default is eng):">
+<!ENTITY ocr.pref.dpi "Output pdf dpi (default is 300):">
+<!ENTITY ocr.pref.psm "Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)">
+<!ENTITY ocr.pref.output-options "Output options">
+<!ENTITY ocr.pref.output-note "Save output as a note">
+<!ENTITY ocr.pref.output-pdf "Save output as a PDF with text layer">
+<!ENTITY ocr.pref.overwrite-pdf "Overwrite the initial PDF with the output">
+<!ENTITY ocr.pref.output-hocr "Save output as a HTML/hocr file(s)">
+<!ENTITY ocr.pref.max-html-pages "Maximum number of pages for which an individual HTML attachment is created:">
+<!ENTITY ocr.pref.output-png "Save the intermediate images as well in the folder">
+<!ENTITY ocr.pref.copy-attachment "Import the resulting PDF as a copy instead of as a file link">

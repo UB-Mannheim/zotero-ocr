@@ -3,7 +3,10 @@
 
 <!ENTITY ocr.pref.general "Opšte">
 <!ENTITY ocr.pref.parameters "OCR podešavanja">
-<!ENTITY ocr.pref.tesseract-path "Puna putanja do programa tesseract (ako je prazno, pretražuju se uobičajene lokacije):">
+<!ENTITY ocr.pref.programs "Programi">
+<!ENTITY ocr.pref.search-paths "Ako je prazno, program se traži na uobičajenim lokacijama.">
+<!ENTITY ocr.pref.pdftoppm-help "Ova putanja se zanemaruje ako biblioteka pdf.js ugrađena u Zotero može da prikaže stranice PDF-a.">
+<!ENTITY ocr.pref.tesseract-path "Puna putanja do programa tesseract:">
 <!ENTITY ocr.pref.pdftoppm-path "Puna putanja do programa pdftoppm:">
 <!ENTITY ocr.pref.language "Izaberi jezik i pismo za prepoznavanje (podrazumevano: eng):">
 <!ENTITY ocr.pref.dpi "Rezolucija izlaznog PDF-a u dpi (podrazumevano: 300):">

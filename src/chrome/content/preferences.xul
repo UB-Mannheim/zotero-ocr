@@ -36,11 +36,18 @@
             <preference id="pref-zoteroocr-output-as-copy-attachment" name="extensions.zotero.zoteroocr.outputAsCopyAttachment" type="bool"/>
         </preferences>
         <groupbox>
-            <caption label="&ocr.pref.parameters;"/>
+            <caption label="&ocr.pref.programs;"/>
             <label value="&ocr.pref.tesseract-path;"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
+            <label value="&ocr.pref.search-paths;" class="indented-pref"/>
+            <spacer height="12"/>
             <label value="&ocr.pref.pdftoppm-path;"/>
             <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
+            <label value="&ocr.pref.pdftoppm-help;" class="indented-pref"/>
+            <label value="&ocr.pref.search-paths;" class="indented-pref"/>
+        </groupbox>
+        <groupbox>
+            <caption label="&ocr.pref.parameters;"/>
             <hbox>
                 <label value="&ocr.pref.language;"/>
                 <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>

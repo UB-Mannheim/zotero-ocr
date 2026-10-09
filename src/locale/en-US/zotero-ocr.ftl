@@ -6,8 +6,16 @@ ocr-preferences =
 
 ocr-pref-parameters = OCR parameters
 
+ocr-pref-programs = Programs
+
+ocr-pref-search-paths =
+    .value = When empty, some standard locations are searched for it.
+
+ocr-pref-pdftoppm-help =
+    .value = If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored.
+
 ocr-pref-tesseract-path =
-    .value = Full location of the tesseract executable (when empty, some standard locations are searched for it):
+    .value = Full location of the tesseract executable:
 
 ocr-pref-pdftoppm-path =
     .value = Full location of the pdftoppm executable:
@@ -43,3 +51,21 @@ ocr-pref-output-png =
 
 ocr-pref-copy-attachment =
     .label = Import the resulting PDF as a copy instead of as a file link
+
+ocr-already-running = Zotero OCR is already running. Please wait until it has finished.
+ocr-executable-not-found = No { $program } executable found, last check: { $path }
+ocr-not-pdf = Item is an attachment but not PDF and will be ignored.
+ocr-no-pdf = No PDF found for the selected item.
+ocr-multiple-pdfs = There are several PDFs attached to this item. Only the first one will be processed.
+ocr-progress-initializing = Initializing...
+ocr-progress-extracting = Extracting pages...
+ocr-progress-extracting-page = Extracting page { $page } of { $total }
+ocr-progress-processing = Processing... please be patient
+ocr-progress-processing-page = Processing page { $page } of { $total }
+ocr-progress-completed = OCR completed: attaching output
+ocr-error-generic = An error occurred
+ocr-error-skipped-lines = [ skipping { $count } lines ]
+ocr-error-details =
+    Last ZoteroOCR log message: { $log }
+
+    ZoteroOCR error: { $error }

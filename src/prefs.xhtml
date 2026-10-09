@@ -1,42 +1,45 @@
    <vbox>
+         <linkset>
+             <html:link rel="localization" href="zotero-ocr.ftl"/>
+         </linkset>
          <groupbox>
-             <html:h2>Programs</html:h2>
-             <label value="Full location of the tesseract executable:"/>
+             <html:h2 data-l10n-id="ocr-pref-programs">Programs</html:h2>
+             <label data-l10n-id="ocr-pref-tesseract-path" value="Full location of the tesseract executable:"/>
              <html:input type="text" id="pref-zoteroocr-ocrPath-value" flex="1" preference="extensions.zotero.zoteroocr.ocrPath"/>
-             <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+             <label data-l10n-id="ocr-pref-search-paths" value="When empty, some standard locations are searched for it." class="indented-pref"/>
              <html:div style="height: 12px;"/>
-             <label value="Full location of the pdftoppm executable:"/>
+             <label data-l10n-id="ocr-pref-pdftoppm-path" value="Full location of the pdftoppm executable:"/>
              <html:input type="text" id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="extensions.zotero.zoteroocr.pdftoppmPath"/>
-             <label value="If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored." class="indented-pref"/>
-             <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+             <label data-l10n-id="ocr-pref-pdftoppm-help" value="If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored." class="indented-pref"/>
+             <label data-l10n-id="ocr-pref-search-paths" value="When empty, some standard locations are searched for it." class="indented-pref"/>
          </groupbox>
          <groupbox>
-             <html:h2>OCR parameters</html:h2>
+             <html:h2 data-l10n-id="ocr-pref-parameters">OCR parameters</html:h2>
             <hbox>
-                <label value="Choose a language/script you want to use for recognition (default is eng):"/>
+                <label data-l10n-id="ocr-pref-language" value="Choose a language/script you want to use for recognition (default is eng):"/>
                 <html:input type="text" id="pref-zoteroocr-language-value" preference="extensions.zotero.zoteroocr.language" width="100"/>
             </hbox>
             <hbox>
-                <label value="Output pdf dpi (default is 300):"/>
+                <label data-l10n-id="ocr-pref-dpi" value="Output pdf dpi (default is 300):"/>
                 <html:input type="text" id="pref-zoteroocr-outputdpi-value" preference="extensions.zotero.zoteroocr.outputDPI" width="60"/>
             </hbox>
             <hbox>
-                <label value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
+                <label data-l10n-id="ocr-pref-psm" value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
                 <html:input type="text" id="pref-zoteroocr-psmmode-value" preference="extensions.zotero.zoteroocr.psmmode" width="30"/>
             </hbox>
         </groupbox>
         <groupbox>
-            <html:h2>Output options</html:h2>
-            <checkbox preference="extensions.zotero.zoteroocr.outputNote" label="Save output as a note"/>
-            <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" label="Save output as a PDF with text layer" oncommand="document.getElementById('checkbox-zoteroocr-overwrite-pdf').disabled = !document.getElementById('checkbox-zoteroocr-output-pdf').checked"/>
-            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="extensions.zotero.zoteroocr.overwritePDF" label="Overwrite the initial PDF with the output" class="indented-pref"/>
-            <checkbox preference="extensions.zotero.zoteroocr.outputHocr" label="Save output as a HTML/hocr file(s)"/>
+            <html:h2 data-l10n-id="ocr-pref-output-options">Output options</html:h2>
+            <checkbox preference="extensions.zotero.zoteroocr.outputNote" data-l10n-id="ocr-pref-output-note" label="Save output as a note"/>
+            <checkbox id="checkbox-zoteroocr-output-pdf" preference="extensions.zotero.zoteroocr.outputPDF" data-l10n-id="ocr-pref-output-pdf" label="Save output as a PDF with text layer" oncommand="document.getElementById('checkbox-zoteroocr-overwrite-pdf').disabled = !document.getElementById('checkbox-zoteroocr-output-pdf').checked"/>
+            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="extensions.zotero.zoteroocr.overwritePDF" data-l10n-id="ocr-pref-overwrite-pdf" label="Overwrite the initial PDF with the output" class="indented-pref"/>
+            <checkbox preference="extensions.zotero.zoteroocr.outputHocr" data-l10n-id="ocr-pref-output-hocr" label="Save output as a HTML/hocr file(s)"/>
             <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
             <hbox class="indented-pref">
-              <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
+              <label data-l10n-id="ocr-pref-max-html-pages" value="Maximum number of pages for which an individual HTML attachment is created:"/>
               <html:input type="text" id="pref-zoteroocr-max-html-pages" preference="extensions.zotero.zoteroocr.maximumPagesAsHtml" width="20"/>
             </hbox>
-            <checkbox preference="extensions.zotero.zoteroocr.outputPNG" label="Save the intermediate images as well in the folder"/>
-            <checkbox preference="extensions.zotero.zoteroocr.outputAsCopyAttachment" label="Import the resulting PDF as a copy instead of as a file link"/>
+            <checkbox preference="extensions.zotero.zoteroocr.outputPNG" data-l10n-id="ocr-pref-output-png" label="Save the intermediate images as well in the folder"/>
+            <checkbox preference="extensions.zotero.zoteroocr.outputAsCopyAttachment" data-l10n-id="ocr-pref-copy-attachment" label="Import the resulting PDF as a copy instead of as a file link"/>
         </groupbox>
     </vbox>

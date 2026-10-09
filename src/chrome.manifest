@@ -3,5 +3,6 @@ content zoteroocr chrome/content/
 overlay chrome://zotero/content/zoteroPane.xul chrome://zoteroocr/content/overlay.xul
 
 locale  zoteroocr  en-US   chrome/locale/en-US/
+locale  zoteroocr  sr-Latn-RS   chrome/locale/sr-Latn-RS/
 
 skin    zoteroocr  default chrome/skin/default/zoteroocr/

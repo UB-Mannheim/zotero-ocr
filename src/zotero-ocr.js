@@ -24,6 +24,14 @@ function log(msg) {
 // Set while a recognition run is in progress, to avoid concurrent runs
 // interfering with each other's intermediate files.
 let recognizing = false;
+// Fluent selects the application locale and falls back to English when needed.
+const L10n = {
+    localization: null,
+    async get(id, args) {
+        this.localization ??= new Localization(["zotero-ocr.ftl"]);
+        return this.localization.formatValue(id, args);
+    }
+};
 
 function createZoteroProgressWindow(message, initialProgress = 0) {
     // The progress window is a borderless child window of the main
@@ -407,7 +415,7 @@ async function runPdftoppm({ pdftoppm, dir, pdftoppmCmdArgs, progress }) {
 
         let res = regex.exec(string);
         if (res) {
-            progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+            progress.updateMessage(await L10n.get("ocr-progress-extracting-page", { page: Number(res[1]), total: Number(res[2]) }))
         }
     }
 
@@ -429,6 +437,7 @@ async function renderPagesWithPdfJsWorker({ worker }, { pdf, dir, baseKey, image
     log("Rendering PDF pages with pdf.js (worker)");
     const writtenFiles = [];
     const writePromises = [];
+    let progressUpdates = Promise.resolve();
     let done = false;
     let workerError = null;
 
@@ -440,8 +449,11 @@ async function renderPagesWithPdfJsWorker({ worker }, { pdf, dir, baseKey, image
         if (msg.type === "started") {
             log("Rendering " + msg.numPages + " pages at " + dpi + " DPI");
         } else if (msg.type === "progress") {
-            progress.updateMessage(`Extracting page ${msg.i} of ${msg.numPages}`);
-            progress.updateProgress(Math.round(msg.i * 100 / msg.numPages));
+            // Keep asynchronous translations ordered and finish them before closing.
+            progressUpdates = progressUpdates.then(async () => {
+                progress.updateMessage(await L10n.get("ocr-progress-extracting-page", { page: msg.i, total: msg.numPages }));
+                progress.updateProgress(Math.round(msg.i * 100 / msg.numPages));
+            }).catch(e => log("Error translating progress: " + e));
         } else if (msg.type === "image") {
             writePromises.push(
                 IOUtils.write(PathUtils.join(dir, msg.filename), new Uint8Array(msg.buffer))
@@ -476,6 +488,7 @@ async function renderPagesWithPdfJsWorker({ worker }, { pdf, dir, baseKey, image
         worker.removeEventListener("error", onWorkerError);
     }
     await Promise.all(writePromises);
+    await progressUpdates;
 
     if (workerError) {
         log("pdf.js worker rendering failed: " + workerError);
@@ -546,7 +559,7 @@ async function renderPagesWithPdfJsDirect({ pdfjsLib, base }, { pdf, dir, baseKe
                 const filename = baseKey + "-page-" + String(i).padStart(digitCount, "0") + (isPng ? ".png" : ".jpg");
                 await IOUtils.write(PathUtils.join(dir, filename), new Uint8Array(await blob.arrayBuffer()));
                 writtenFiles.push(filename);
-                progress.updateMessage(`Extracting page ${i} of ${numPages}`);
+                progress.updateMessage(await L10n.get("ocr-progress-extracting-page", { page: i, total: numPages }));
                 progress.updateProgress(Math.round(i * 100 / numPages));
             } finally {
                 page.cleanup();
@@ -644,7 +657,7 @@ ZoteroOCR = {
     async recognize(window) {
 
         if (recognizing) {
-            window.alert("Zotero OCR is already running. Please wait until it has finished.");
+            window.alert(await L10n.get("ocr-already-running"));
             return;
         }
         recognizing = true;
@@ -653,7 +666,7 @@ ZoteroOCR = {
 
         logString = log("entering recognize()");
 
-        const progress = createZoteroProgressWindow("Initializing...", 0);
+        let progress;
 
         async function checkExternalCmd(exeName, exePref, possiblePath) {
 
@@ -701,6 +714,7 @@ ZoteroOCR = {
         let pdfJs = null;
 
         try {
+            progress = createZoteroProgressWindow(await L10n.get("ocr-progress-initializing"), 0);
 
             /*
                 Check the settings and alternative possible locations for tesseract.
@@ -712,7 +726,7 @@ ZoteroOCR = {
             let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let ocrEngine = await checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
             if (!(await IOUtils.exists(ocrEngine))) {
-                window.alert("No tesseract executable found, last check: " + ocrEngine);
+                window.alert(await L10n.get("ocr-executable-not-found", { program: "tesseract", path: ocrEngine }));
                 return;
             }
 
@@ -728,7 +742,7 @@ ZoteroOCR = {
                 let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
                 pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
                 if (!(await IOUtils.exists(pdftoppm))) {
-                    window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+                    window.alert(await L10n.get("ocr-executable-not-found", { program: "pdftoppm", path: pdftoppm }));
                     return;
                 }
             }
@@ -749,7 +763,7 @@ ZoteroOCR = {
                         }
                         item = Zotero.Items.get(item.parentItemID);
                     } else {
-                        window.alert("Item is an attachment but not PDF and will be ignored.");
+                        window.alert(await L10n.get("ocr-not-pdf"));
                         continue;
                     }
                 } else {
@@ -757,11 +771,11 @@ ZoteroOCR = {
                         .map(itemID => Zotero.Items.get(itemID))
                         .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
                     if (pdfAttachments.length == 0) {
-                        window.alert("No PDF found for the selected item.");
+                        window.alert(await L10n.get("ocr-no-pdf"));
                         continue;
                     }
                     if (pdfAttachments.length > 1) {
-                        window.alert("There are several PDFs attached to this item. Only the first one will be processed.");
+                        window.alert(await L10n.get("ocr-multiple-pdfs"));
                     }
                     pdfItem = pdfAttachments[0];
                 }
@@ -796,7 +810,7 @@ ZoteroOCR = {
                     pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 }
 
-                logString = "Extracting pages...";
+                logString = await L10n.get("ocr-progress-extracting");
                 progress.updateMessage(logString);
                 // extract images from PDF
                 let imageList = PathUtils.join(dir, baseKey + '-list.txt');
@@ -822,7 +836,7 @@ ZoteroOCR = {
                             let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
                             pdftoppm = await checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
                             if (!(await IOUtils.exists(pdftoppm))) {
-                                throw new Error("No pdftoppm executable found, last check: " + pdftoppm);
+                                throw new Error(await L10n.get("ocr-executable-not-found", { program: "pdftoppm", path: pdftoppm }));
                             }
                         }
                         if (pdfJs) {
@@ -891,7 +905,7 @@ ZoteroOCR = {
                     parameters.push('hocr');
                 }
                 
-                progress.updateMessage("Processing... please be patient");
+                progress.updateMessage(await L10n.get("ocr-progress-processing"));
                 logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
 
 
@@ -930,7 +944,7 @@ ZoteroOCR = {
                     if (res) {
                         let current = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
-                        progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
+                        progress.updateMessage(await L10n.get("ocr-progress-processing-page", { page: current + 1, total: pageCount }))
                         logString = log(`page: ${current + 1}`)
                     }
                 }
@@ -947,16 +961,16 @@ ZoteroOCR = {
                         let head = errorLines.slice(0, maxLogLines / 2).join('\n');
                         let tail = errorLines.slice(-maxLogLines / 2).join('\n');
                         let skippedLines = errorLines.length - maxLogLines;
-                        errorLog = head + `\n...\n[ skipping ${skippedLines} lines ]\n...\n` + tail;
+                        errorLog = head + "\n...\n" + await L10n.get("ocr-error-skipped-lines", { count: skippedLines }) + "\n...\n" + tail;
                     }
 
                     if (!errorLog) {
-                        errorLog = "An error occurred"
+                        errorLog = await L10n.get("ocr-error-generic")
                     }
                     throw new Error(errorLog)
                 }
                 
-                logString = "OCR completed: attaching output";
+                logString = await L10n.get("ocr-progress-completed");
                 progress.updateMessage(logString);
 
                 if (Zotero.Prefs.get("zoteroocr.outputNote")) {
@@ -1044,7 +1058,7 @@ ZoteroOCR = {
             }
 
         } catch (error) {
-            let alertMessage = "Last ZoteroOCR log message: " + logString + "\n\nZoteroOCR error: " + error.message;
+            let alertMessage = await L10n.get("ocr-error-details", { log: logString || "", error: error.message });
             window.alert(alertMessage);
 
         } finally {
@@ -1052,7 +1066,7 @@ ZoteroOCR = {
             if (pdfJs && pdfJs.worker) {
                 terminatePdfJsWorker(pdfJs.worker);
             }
-            progress.close();
+            progress?.close();
         }
     }
 

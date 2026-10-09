@@ -9,7 +9,7 @@
 
 <prefwindow
     id="zoteroocr-preferences"
-    title="Zotero OCR Preferences"
+    title="&ocr.preferences.label;"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
     <script src="chrome://zotero/content/include.js"/>
@@ -20,7 +20,7 @@
             src="chrome://zoteroocr/locale/zoteroocr.properties"/>
     </stringbundleset>
 
-    <prefpane label="General" id="zoteroocr-prefpane-general" flex="1">
+    <prefpane label="&ocr.pref.general;" id="zoteroocr-prefpane-general" flex="1">
         <preferences>
             <preference id="pref-zoteroocr-ocrPath" name="extensions.zotero.zoteroocr.ocrPath" type="string"/>
             <preference id="pref-zoteroocr-pdftoppmPath" name="extensions.zotero.zoteroocr.pdftoppmPath" type="string"/>
@@ -36,44 +36,44 @@
             <preference id="pref-zoteroocr-output-as-copy-attachment" name="extensions.zotero.zoteroocr.outputAsCopyAttachment" type="bool"/>
         </preferences>
         <groupbox>
-            <caption label="Programs"/>
-            <label value="Full location of the tesseract executable:"/>
+            <caption label="&ocr.pref.programs;"/>
+            <label value="&ocr.pref.tesseract-path;"/>
             <textbox id="pref-zoteroocr-ocrPath-value" flex="1" preference="pref-zoteroocr-ocrPath"/>
-            <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+            <label value="&ocr.pref.search-paths;" class="indented-pref"/>
             <spacer height="12"/>
-            <label value="Full location of the pdftoppm executable:"/>
+            <label value="&ocr.pref.pdftoppm-path;"/>
             <textbox id="pref-zoteroocr-pdftoppmPath-value" flex="1" preference="pref-zoteroocr-pdftoppmPath"/>
-            <label value="If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored." class="indented-pref"/>
-            <label value="When empty, some standard locations are searched for it." class="indented-pref"/>
+            <label value="&ocr.pref.pdftoppm-help;" class="indented-pref"/>
+            <label value="&ocr.pref.search-paths;" class="indented-pref"/>
         </groupbox>
         <groupbox>
-            <caption label="OCR parameters"/>
+            <caption label="&ocr.pref.parameters;"/>
             <hbox>
-                <label value="Choose a language/script you want to use for recognition (default is eng):"/>
+                <label value="&ocr.pref.language;"/>
                 <textbox id="pref-zoteroocr-language-value" preference="pref-zoteroocr-language" width="100"/>
             </hbox>
             <hbox>
-                <label value="Output pdf dpi (default is 300):"/>
+                <label value="&ocr.pref.dpi;"/>
                 <textbox id="pref-zoteroocr-output-dpi-value" preference="pref-zoteroocr-output-dpi" width="100"/>
             </hbox>
             <hbox>
-                <label value="Tesseract Page Segmentation Mode - integer from 0 to 13 (inclusive)"/>
+                <label value="&ocr.pref.psm;"/>
                 <textbox id="pref-zoteroocr-psmmode-value" preference="pref-zoteroocr-psmmode" width="70"/>
             </hbox>
         </groupbox>
         <groupbox>
-            <caption label="Output options"/>
-            <checkbox preference="pref-zoteroocr-output-note" label="Save output as a note"/>
-            <checkbox id="checkbox-zoteroocr-output-pdf" preference="pref-zoteroocr-output-pdf" label="Save output as a PDF with text layer" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
-            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="pref-zoteroocr-overwrite-pdf" label="Overwrite the initial PDF with the output" class="indented-pref"/>
-            <checkbox preference="pref-zoteroocr-output-hocr" label="Save output as a HTML/hocr file(s)"/>
+            <caption label="&ocr.pref.output-options;"/>
+            <checkbox preference="pref-zoteroocr-output-note" label="&ocr.pref.output-note;"/>
+            <checkbox id="checkbox-zoteroocr-output-pdf" preference="pref-zoteroocr-output-pdf" label="&ocr.pref.output-pdf;" oncommand="Zotero.OCR.updatePDFOverwritePref()"/>
+            <checkbox id="checkbox-zoteroocr-overwrite-pdf" preference="pref-zoteroocr-overwrite-pdf" label="&ocr.pref.overwrite-pdf;" class="indented-pref"/>
+            <checkbox preference="pref-zoteroocr-output-hocr" label="&ocr.pref.output-hocr;"/>
             <!-- The next preference variable is actually a number, but we treat it as a string to avoid a special treatment with javascript here -->
             <hbox class="indented-pref">
-              <label value="Maximum number of pages for which an individual HTML attachment is created:"/>
+              <label value="&ocr.pref.max-html-pages;"/>
               <textbox id="pref-zoteroocr-max-html-pages" preference="pref-zoteroocr-max-html-pages" width="20"/>
             </hbox>
-            <checkbox preference="pref-zoteroocr-output-png" label="Save the intermediate images as well in the folder"/>
-            <checkbox preference="pref-zoteroocr-output-as-copy-attachment" label="Import the resulting PDF as a copy instead of as a file link"/>
+            <checkbox preference="pref-zoteroocr-output-png" label="&ocr.pref.output-png;"/>
+            <checkbox preference="pref-zoteroocr-output-as-copy-attachment" label="&ocr.pref.copy-attachment;"/>
         </groupbox>
     </prefpane>
 

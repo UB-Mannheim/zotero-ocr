@@ -771,7 +771,7 @@ ZoteroOCR = {
                 let baseTitle = pdfItem.getDisplayTitle();
                 let dir = PathUtils.parent(pdf);
                 let baseFilename = PathUtils.filename(pdf).replace(/\.pdf$/, '')
-                let ocrbase = Zotero.Prefs.get("zoteroocr.overwritePDF") ? baseFilename : baseFilename + '.ocr';
+                let ocrbase = baseFilename + '.ocr';
                 // TODO filter out PDFs which have already a text layer ?
 
                 // build the pdftoppm arguments based on hidden preferences:
@@ -1013,25 +1013,32 @@ ZoteroOCR = {
                 }
 
                 // attach PDF if it is a new one
-                if (Zotero.Prefs.get("zoteroocr.outputPDF") && !(Zotero.Prefs.get("zoteroocr.overwritePDF"))) {
-                    // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
-                    let absolutePdfFilename = PathUtils.join(dir, ocrbase + '.pdf');
-                    if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
-                        await Zotero.Attachments.importFromFile({
-                            file: absolutePdfFilename,
-                            libraryID: item.libraryID,
-                            parentItemID: item.id,
-                            title: baseTitle + '.ocr'
-                        });
-                        await Zotero.File.removeIfExists(absolutePdfFilename);
+                if (Zotero.Prefs.get("zoteroocr.outputPDF")) {
+                    if (Zotero.Prefs.get("zoteroocr.overwritePDF")) {
+                        Zotero.File.rename(PathUtils.join(dir, ocrbase + '.pdf'), PathUtils.filename(pdf), {overwrite: true});
                     } else {
-                        await Zotero.Attachments.linkFromFile({
-                            file: absolutePdfFilename,
-                            parentItemID: item.id,
-                            title: baseTitle + '.ocr'
-                        });
+                        // Zotero.Attachments.importFromFile() works in group libraries, linkFromFile() does not
+                        let absolutePdfFilename = PathUtils.join(dir, ocrbase + '.pdf');
+                        if (Zotero.Prefs.get("zoteroocr.outputAsCopyAttachment")) {
+                            await Zotero.Attachments.importFromFile({
+                                file: absolutePdfFilename,
+                                libraryID: item.libraryID,
+                                parentItemID: item.id,
+                                title: baseTitle + '.ocr'
+                            });
+                            await Zotero.File.removeIfExists(absolutePdfFilename);
+                        } else {
+                            await Zotero.Attachments.linkFromFile({
+                                file: absolutePdfFilename,
+                                parentItemID: item.id,
+                                title: baseTitle + '.ocr'
+                            });
+                        }
                     }
+
                 }
+
+                    
 
                 if (!Zotero.Prefs.get("zoteroocr.outputPNG") && imageListArray.length) {
                     // delete image list

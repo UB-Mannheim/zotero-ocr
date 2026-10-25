@@ -11,6 +11,15 @@ ocr-pref-programs = Programi
 ocr-pref-search-paths =
     .value = Ako je prazno, program se traži na uobičajenim lokacijama.
 
+ocr-pref-parallel =
+    .value = Broj paralelnih procesa:
+
+ocr-pref-parallel-help1 =
+    .value = Koristi se i za prikazivanje stranica pdf.js-om i za Tesseract OCR.
+
+ocr-pref-parallel-help2 =
+    .value = Vrednost 1 onemogućava paralelizam (podrazumevano 2); vrednosti iznad 4 su ograničene na 4.
+
 ocr-pref-pdftoppm-help =
     .value = Ova putanja se zanemaruje ako biblioteka pdf.js ugrađena u Zotero može da prikaže stranice PDF-a.
 
@@ -63,6 +72,10 @@ ocr-progress-extracting-page = Izdvajanje stranice { $page } od { $total }
 ocr-progress-processing = Obrada je u toku... sačekajte
 ocr-progress-processing-page = Obrada stranice { $page } od { $total }
 ocr-progress-completed = OCR je završen: dodavanje rezultata
+ocr-progress-parallel-headline = Zotero OCR - { $count } paralelnih procesa
+ocr-progress-parallel = Obrada { $pages } stranica sa { $count } paralelna procesa
+ocr-progress-sequential-headline = Zotero OCR - sekventno (pdfunite nije pronađen)
+ocr-progress-sequential = pdfunite nije pronađen - sekventna obrada { $count } stranica
 ocr-error-generic = Došlo je do greške
 ocr-error-skipped-lines = [ preskočeno redova: { $count } ]
 ocr-error-details =

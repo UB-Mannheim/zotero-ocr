@@ -11,6 +11,15 @@ ocr-pref-programs = Programs
 ocr-pref-search-paths =
     .value = When empty, some standard locations are searched for it.
 
+ocr-pref-parallel =
+    .value = Number of parallel processes:
+
+ocr-pref-parallel-help1 =
+    .value = Used for both pdf.js page rendering and Tesseract OCR.
+
+ocr-pref-parallel-help2 =
+    .value = 1 disables parallelism (default is 2); values above 4 are limited to 4.
+
 ocr-pref-pdftoppm-help =
     .value = If the pdf.js library bundled with Zotero can render the PDF pages, this is ignored.
 
@@ -63,6 +72,10 @@ ocr-progress-extracting-page = Extracting page { $page } of { $total }
 ocr-progress-processing = Processing... please be patient
 ocr-progress-processing-page = Processing page { $page } of { $total }
 ocr-progress-completed = OCR completed: attaching output
+ocr-progress-parallel-headline = Zotero OCR - { $count } parallel processes
+ocr-progress-parallel = Processing { $pages } pages with { $count } parallel processes
+ocr-progress-sequential-headline = Zotero OCR - sequential (pdfunite not found)
+ocr-progress-sequential = pdfunite not found - processing { $count } pages sequentially
 ocr-error-generic = An error occurred
 ocr-error-skipped-lines = [ skipping { $count } lines ]
 ocr-error-details =

@@ -11,6 +11,15 @@ function log(msg) {
     return message;
 }
 
+// Zotero 6 uses string bundles rather than Fluent.
+const L10n = {
+    bundle: null,
+    get(id, args) {
+        this.bundle = this.bundle || Services.strings.createBundle("chrome://zoteroocr/locale/zoteroocr.properties");
+        return args ? this.bundle.formatStringFromName(id, args, args.length) : this.bundle.GetStringFromName(id);
+    }
+};
+
 function createZoteroProgressWindow(message, initialProgress = 0) {
     try {
         // Create a progress window using Zotero's API
@@ -98,17 +107,14 @@ Zotero.OCR = new function() {
         setTimeout ( () => {
             const win = Zotero. getMainWindow();
             if (win) {
-                let message = "You are still using Zotero 6 or earlier.\n\n"
-                message += "That version has not been supported by the Zotero team for a few years, ";
-                message += "Zotero-OCR will stop working for you in the near future. "
-                message += "Upgrade to Zotero 10 as soon as possible, and enjoy many new features and security updates."
+                let message = L10n.get("ocr-upgrade-zotero");
                 Services. prompt.alert (win, "Zotero-OCR", message);
             }
         }, 1000);
 
         let logString;
 
-        const progress = createZoteroProgressWindow("Initializing...", 0);
+        const progress = createZoteroProgressWindow(L10n.get("ocr-progress-initializing"), 0);
 
         let checkExternalCmd = Zotero.Promise.coroutine(function*(exeName, exePref, possiblePath) {
             // Look for the pdftoppm  or tesseract executable in the settings and at commonly used locations.
@@ -162,14 +168,14 @@ Zotero.OCR = new function() {
             let pdftoppmPaths = ["", "/usr/local/bin/", "/usr/bin/", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let pdftoppm = yield checkExternalCmd("pdftoppm", "zoteroocr.pdftoppmPath", pdftoppmPaths);
             if (!(yield OS.File.exists(pdftoppm))) {
-                window.alert("No pdftoppm executable found, last check: " + pdftoppm);
+                window.alert(L10n.get("ocr-executable-not-found", ["pdftoppm", pdftoppm]));
                 return;
             }
 
             let ocrEnginePaths = ["", "/usr/local/bin/", "/usr/bin/", "C:\\Program Files\\Tesseract-OCR\\", "/opt/homebrew/bin/", "/usr/local/homebrew/bin/", "/run/current-system/sw/bin/"];
             let ocrEngine = yield checkExternalCmd("tesseract", "zoteroocr.ocrPath", ocrEnginePaths);
             if (!(yield OS.File.exists(ocrEngine))) {
-                window.alert("No tesseract executable found, last check: " + ocrEngine);
+                window.alert(L10n.get("ocr-executable-not-found", ["tesseract", ocrEngine]));
                 return;
             }
 
@@ -184,7 +190,7 @@ Zotero.OCR = new function() {
                 pdfinfo = pdfinfo + ".exe";
             }
             if (!(yield OS.File.exists(pdfinfo))) {
-                alert("No " + pdfinfo + " executable found.");
+                alert(L10n.get("ocr-pdfinfo-not-found", [pdfinfo]));
                 return;
             }
 
@@ -202,7 +208,7 @@ Zotero.OCR = new function() {
                         }
                         item = Zotero.Items.get(item.parentItemID);
                     } else {
-                        alert("Item is attachment but not PDF and will be ignored.");
+                        alert(L10n.get("ocr-not-pdf"));
                         continue;
                     }
                 } else {
@@ -210,11 +216,11 @@ Zotero.OCR = new function() {
                         .map(itemID => Zotero.Items.get(itemID))
                         .filter(att => att.isFileAttachment() && att.attachmentContentType == 'application/pdf');
                     if (pdfAttachments.length == 0) {
-                        alert("No PDF found for the selected item.");
+                        alert(L10n.get("ocr-no-pdf"));
                         continue;
                     }
                     if (pdfAttachments.length > 1) {
-                        alert("There are several PDFs attached to this item. Only the first one will be processed.");
+                        alert(L10n.get("ocr-multiple-pdfs"));
                     }
                     pdfItem = pdfAttachments[0];
                 }
@@ -246,7 +252,7 @@ Zotero.OCR = new function() {
                     pdftoppmCmdArgs = [...pdftoppmCmdArgs, '-png', '-r', Zotero.Prefs.get("zoteroocr.outputDPI"), pdf, baseKey + '-page'];
                 }
 
-                progress.updateMessage("Extracting pages...");
+                progress.updateMessage(L10n.get("ocr-progress-extracting"));
                 // extract images from PDF
                 let imageList = OS.Path.join(dir, baseKey + '-list.txt');
                 let pageCount;
@@ -287,7 +293,7 @@ Zotero.OCR = new function() {
                             let res = regex.exec(string);
                             if (res) {
 
-                                progress.updateMessage(`Extracting page ${res[1]} of ${res[2]}`)
+                                progress.updateMessage(L10n.get("ocr-progress-extracting-page", [res[1], res[2]]))
                             }
                             logString = log("line:", string);
                         }
@@ -346,7 +352,7 @@ Zotero.OCR = new function() {
                     parameters.push('hocr');
                 }
 
-                progress.updateMessage("Processing... please be patient");
+                progress.updateMessage(L10n.get("ocr-progress-processing"));
                 logString = log("Running " + ocrEngine + ' ' + parameters.join(' '));
                 let proc = yield Subprocess.call({
                     command: ocrEngine,
@@ -383,7 +389,7 @@ Zotero.OCR = new function() {
                     if (res) {
                         let current = parseInt(res[1])
                         // display page count starting at 1 instead ot zero
-                        progress.updateMessage(`Processing page ${current + 1} of ${pageCount}`)
+                        progress.updateMessage(L10n.get("ocr-progress-processing-page", [String(current + 1), String(pageCount)]))
                     }
                 }
 
@@ -399,16 +405,16 @@ Zotero.OCR = new function() {
                         let head = errorLines.slice(0, maxLogLines / 2).join('\n');
                         let tail = errorLines.slice(-maxLogLines / 2).join('\n');
                         let skippedLines = errorLines.length - maxLogLines;
-                        errorLog = head + `\n...\n[ skipping ${skippedLines} lines ]\n...\n` + tail;
+                        errorLog = head + "\n...\n" + L10n.get("ocr-error-skipped-lines", [String(skippedLines)]) + "\n...\n" + tail;
                     }
 
                     if (!errorLog) {
-                        errorLog = "An error occurred"
+                        errorLog = L10n.get("ocr-error-generic")
                     }
                     throw new Error(errorLog)
                 }
 
-                logString = "OCR completed: attaching output"
+                logString = L10n.get("ocr-progress-completed")
                 progress.updateMessage(logString);
 
                 if (Zotero.Prefs.get("zoteroocr.outputNote")) {
@@ -495,7 +501,7 @@ Zotero.OCR = new function() {
                 }
             }
         } catch (error) {
-            let alertMessage = "Last ZoteroOCR log message: " + logString + "\n\nZoteroOCR error: " + error.message;
+            let alertMessage = L10n.get("ocr-error-details", [logString || "", error.message]);
             window.alert(alertMessage);
 
         } finally {
